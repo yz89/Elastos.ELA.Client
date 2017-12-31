@@ -27,36 +27,44 @@ func (sync *DataSyncImpl) SyncChainData() {
 	// Get the addresses in this wallet
 	sync.addresses, _ = sync.GetAddresses()
 
-	var err error
-	var chainHeight uint32
-	var currentHeight uint32
-	var block *rpc.BlockInfo
+	if currentHeight, needSync := sync.needSyncBlocks(); needSync {
 
-	fmt.Print("Synchronize blocks: ")
-	for {
-		chainHeight, err = rpc.GetBlockCount()
-		if err != nil {
-			break
+		fmt.Print("Synchronize blocks: ")
+		for {
+			block, err := rpc.GetBlockByHeight(currentHeight)
+			if err != nil {
+				break
+			}
+
+			sync.processBlock(block)
+
+			// Update wallet height
+			sync.CurrentHeight(block.BlockData.Height + 1)
+
+			fmt.Print(">")
+
+			if currentHeight, needSync = sync.needSyncBlocks(); !needSync {
+				fmt.Println()
+				break
+			}
 		}
-
-		currentHeight = sync.CurrentHeight(QueryHeightCode)
-		if currentHeight >= chainHeight {
-			fmt.Println()
-			break
-		}
-
-		block, err = rpc.GetBlockByHeight(currentHeight)
-		if err != nil {
-			break
-		}
-
-		sync.processBlock(block)
-
-		// Update wallet height
-		sync.CurrentHeight(block.BlockData.Height + 1)
-
-		fmt.Print(">")
 	}
+}
+
+func (sync *DataSyncImpl) needSyncBlocks() (uint32, bool) {
+
+	chainHeight, err := rpc.GetBlockCount()
+	if err != nil {
+		return 0, false
+	}
+
+	currentHeight := sync.CurrentHeight(QueryHeightCode)
+
+	if currentHeight >= chainHeight {
+		return currentHeight, false
+	}
+
+	return currentHeight, true
 }
 
 func (sync *DataSyncImpl) containAddress(address string) (*Address, bool) {

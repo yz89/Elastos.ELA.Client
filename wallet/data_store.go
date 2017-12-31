@@ -18,7 +18,7 @@ import (
 */
 const (
 	DriverName      = "sqlite3"
-	DBName          = "./sqlite.db"
+	DBName          = "./wallet.db"
 	QueryHeightCode = 0
 	ResetHeightCode = math.MaxUint32
 )
