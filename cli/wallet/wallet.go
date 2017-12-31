@@ -77,7 +77,6 @@ func changePassword(wallet wallet.Wallet) error {
 }
 
 func showAccountInfo(password string) error {
-	log.Info("Enter show account info")
 	keyStore, err := wallet.OpenKeyStore(getPassword([]byte(password), false))
 	if err != nil {
 		return err

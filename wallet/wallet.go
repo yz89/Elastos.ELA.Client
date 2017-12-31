@@ -52,14 +52,12 @@ func Create(password []byte) (Wallet, error) {
 		log.Error("Wallet create key store failed:", err)
 		return nil, err
 	}
-	log.Info("Wallet key store created")
 
 	dataStore, err := OpenDataStore(true)
 	if err != nil {
 		log.Error("Wallet create data store failed:", err)
 		return nil, err
 	}
-	log.Info("Wallet data store created")
 
 	dataStore.AddAddress(keyStore.GetProgramHash(), keyStore.GetRedeemScript(), AddressTypeSingle)
 

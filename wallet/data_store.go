@@ -223,7 +223,6 @@ func (store *DataStoreImpl) DeleteAddress(programHash *Uint160) error {
 }
 
 func (store *DataStoreImpl) GetAddressByUTXO(input *tx.UTXOTxInput) (*Address, error) {
-	log.Info("Find address by UTXOInput:", BytesToHexString(input.ReferTxID.ToArray()))
 	store.Lock()
 	defer store.Unlock()
 

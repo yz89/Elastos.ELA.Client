@@ -13,7 +13,6 @@ import (
 	"ELAClient/crypto"
 	. "ELAClient/common"
 	"ELAClient/core/signature"
-	"ELAClient/common/log"
 )
 
 /*
@@ -66,7 +65,6 @@ func CreateKeyStore(password []byte) (KeyStore, error) {
 		return nil, err
 	}
 	keyStore.IV = BytesToHexString(iv)
-	log.Info("IV created:", keyStore.IV)
 
 	key := make([]byte, 32)
 	_, err = rand.Read(key)
@@ -85,7 +83,6 @@ func CreateKeyStore(password []byte) (KeyStore, error) {
 		return nil, err
 	}
 	keyStore.MasterKey = BytesToHexString(masterKey)
-	log.Info("MasterKey created:", keyStore.MasterKey)
 
 	privateKey, publicKey, _ := crypto.GenKeyPair()
 	signatureRedeemScript, err := CreateSignatureRedeemScript(publicKey)
@@ -93,19 +90,16 @@ func CreateKeyStore(password []byte) (KeyStore, error) {
 		return nil, err
 	}
 	keyStore.RedeemScript = BytesToHexString(signatureRedeemScript)
-	log.Info("Redeem script created:", keyStore.RedeemScript)
 
 	programHash, err := ToScriptHash(signatureRedeemScript, SignTypeSingle)
 	if err != nil {
 		return nil, err
 	}
 	keyStore.ProgramHash = BytesToHexString(programHash[:])
-	log.Info("ProgramHash created:", keyStore.ProgramHash)
 
 	encryptedPrivateKey, err := keyStore.encryptPrivateKey(privateKey, publicKey)
 	defer ClearBytes(encryptedPrivateKey, len(encryptedPrivateKey))
 	keyStore.PrivateKeyEncrypted = BytesToHexString(encryptedPrivateKey)
-	log.Info("Private key encrypted:", keyStore.PrivateKeyEncrypted)
 
 	err = keyStore.saveToFile()
 	if err != nil {
