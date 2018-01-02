@@ -1,11 +1,11 @@
 package crypto
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"errors"
 	"math/big"
+	"crypto/rand"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 )
 
 const (

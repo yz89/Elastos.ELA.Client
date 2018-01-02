@@ -35,7 +35,6 @@ func (sync *DataSyncImpl) SyncChainData() {
 			if err != nil {
 				break
 			}
-
 			sync.processBlock(block)
 
 			// Update wallet height

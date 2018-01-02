@@ -21,7 +21,7 @@ import (
 
 func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 
-	from := strings.TrimLeft(c.String("from"), "-")
+	from := c.String("from")
 	log.Info("From address:", from)
 	if from == "" {
 		addresses, err := wallet.GetAddresses()
@@ -31,7 +31,7 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 		from = addresses[0].Address
 	}
 
-	feeStr := strings.TrimLeft(c.String("fee"), "-")
+	feeStr := c.String("fee")
 	log.Info("Fee:", feeStr)
 	if feeStr == "" {
 		return errors.New("use --fee to specify transfer fee")
@@ -42,19 +42,19 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 		return errors.New("invalid transaction fee")
 	}
 
-	multiOutput := strings.TrimLeft(c.String("multioutput"), "-")
+	multiOutput := c.String("content")
 	log.Info("Multi output:", multiOutput)
 	if multiOutput != "" {
 		return createMultiOutputTransaction(c, wallet, multiOutput, from, fee)
 	}
 
-	to := strings.TrimLeft(c.String("to"), "-")
+	to := c.String("to")
 	log.Info("To address:", to)
 	if to == "" {
 		return errors.New("use --to to specify receiver address")
 	}
 
-	amountStr := strings.TrimLeft(c.String("amount"), "-")
+	amountStr := c.String("amount")
 	log.Info("Amount:", amountStr)
 	if amountStr == "" {
 		return errors.New("use --amount to specify transfer amount")
@@ -65,7 +65,7 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 		return errors.New("invalid transaction amount")
 	}
 
-	lockStr := strings.TrimLeft(c.String("lock"), "-")
+	lockStr := c.String("lock")
 	log.Info("Lock time:", lockStr)
 	var txn *tx.Transaction
 	if lockStr == "" {
@@ -116,7 +116,7 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 		log.Trace("Multi output address:", address, ", amount:", amountStr)
 	}
 
-	lockStr := strings.TrimLeft(c.String("lock"), "-")
+	lockStr := c.String("lock")
 	log.Info("Lock time:", lockStr)
 	var txn *tx.Transaction
 	if lockStr == "" {
@@ -141,8 +141,10 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 	return nil
 }
 
-func signTransaction(c *cli.Context, parameter string, wallet walt.Wallet) error {
-	content, err := getContent(parameter)
+func signTransaction(password []byte, context *cli.Context, wallet walt.Wallet) error {
+	defer ClearBytes(password, len(password))
+
+	content, err := getContent(context)
 	if err != nil {
 		return err
 	}
@@ -157,12 +159,17 @@ func signTransaction(c *cli.Context, parameter string, wallet walt.Wallet) error
 		return errors.New("deserialize transaction failed")
 	}
 
-	transaction, err := wallet.Sign(getPassword([]byte(c.String("password")), false), &txn)
+	haveSign, needSign, err := txn.ParseTransactionSig()
+	if needSign == 0 {
+		return errors.New("transaction was fully signed, no need more sign")
+	}
+
+	transaction, err := wallet.Sign(getPassword(password, false), &txn)
 	if err != nil {
 		return err
 	}
 
-	haveSign, needSign, err := transaction.ParseTransactionSig()
+	haveSign, needSign, err = transaction.ParseTransactionSig()
 	fmt.Println("[", haveSign, "/", haveSign+needSign, "] Sign transaction successful")
 
 	buf := new(bytes.Buffer)
@@ -172,11 +179,22 @@ func signTransaction(c *cli.Context, parameter string, wallet walt.Wallet) error
 	return nil
 }
 
-func sendTransaction(parameter string) error {
-	content, err := getContent(parameter)
+func sendTransaction(context *cli.Context) error {
+	content, err := getContent(context)
 	if err != nil {
 		return err
 	}
+	rawData, err := HexStringToBytes(content)
+	if err != nil {
+		return errors.New("decode transaction content failed")
+	}
+
+	var txn tx.Transaction
+	err = txn.Deserialize(bytes.NewReader(rawData))
+	if err != nil {
+		return errors.New("deserialize transaction failed")
+	}
+
 	result, err := rpc.CallAndUnmarshal("sendrawtransaction", content)
 	if err != nil {
 		return err
@@ -185,24 +203,28 @@ func sendTransaction(parameter string) error {
 	return nil
 }
 
-func getContent(parameter string) (string, error) {
-	log.Info("Content:", parameter)
-	parameter = strings.TrimSpace(parameter) // trim space
+func getContent(context *cli.Context) (string, error) {
+	// get transaction content
+	content := strings.TrimSpace(context.String("content"))
+	if content == "" {
+		return "", errors.New("content should be the transaction file path or it's content")
+	}
+
 	var err error
 	var rawData []byte
-	if strings.Contains(parameter, "/") { // if parameter is a file path
-		if _, err = os.Stat(parameter); err != nil {
-			return parameter, errors.New("invalid transaction file path")
+	if strings.Contains(content, "/") { // if parameter is a file path
+		if _, err = os.Stat(content); err != nil {
+			return content, errors.New("invalid transaction file path")
 		}
-		file, err := os.OpenFile(parameter, os.O_RDONLY, 0666)
+		file, err := os.OpenFile(content, os.O_RDONLY, 0666)
 		if err != nil {
-			return parameter, errors.New("open transaction file failed")
+			return content, errors.New("open transaction file failed")
 		}
 		rawData, err = ioutil.ReadAll(file)
 		if err != nil {
-			return parameter, errors.New("read transaction file failed")
+			return content, errors.New("read transaction file failed")
 		}
 		return string(rawData), nil
 	}
-	return parameter, nil
+	return content, nil
 }

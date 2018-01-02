@@ -1,14 +1,23 @@
 package transaction
 
 import (
-	"ELAClient/common"
 	"io"
+
+	"ELAClient/common"
 )
 
 type BalanceTxInput struct {
 	AssetID     common.Uint256
 	Value       common.Fixed64
 	ProgramHash common.Uint160
+}
+
+func (self BalanceTxInput) String() string {
+	return "BalanceTxInput: {\n\t\t" +
+		"AssetID: " + self.AssetID.String() + "\n\t\t" +
+		"Value: " + self.Value.String() + "\n\t\t" +
+		"ProgramHash: " + self.ProgramHash.String() + "\n\t\t" +
+		"}"
 }
 
 func (bi *BalanceTxInput) Serialize(w io.Writer) {

@@ -1,17 +1,17 @@
 package transaction
 
 import (
+	"io"
+	"fmt"
+	"sort"
+	"bytes"
+	"errors"
+	"crypto/sha256"
+
 	. "ELAClient/common"
 	"ELAClient/common/serialization"
 	"ELAClient/core/contract/program"
-	sig "ELAClient/core/signature"
 	"ELAClient/core/transaction/payload"
-	"bytes"
-	"crypto/sha256"
-	"errors"
-	"io"
-	"sort"
-	"fmt"
 )
 
 //for different transaction types with different payload format
@@ -25,6 +25,23 @@ const (
 	Record        TransactionType = 0x03
 	Deploy        TransactionType = 0x04
 )
+
+func (self TransactionType) Name() string {
+	switch self {
+	case CoinBase:
+		return "CoinBase"
+	case RegisterAsset:
+		return "RegisterAsset"
+	case TransferAsset:
+		return "TransferAsset"
+	case Record:
+		return "Record"
+	case Deploy:
+		return "Deploy"
+	default:
+		return "Unknown"
+	}
+}
 
 const (
 	InvalidTransactionSize = -1
@@ -66,14 +83,23 @@ type Transaction struct {
 	LockTime       uint32
 	Programs       []*program.Program
 
-	//Inputs/Outputs map base on Asset (needn't serialize)
-	AssetOutputs      map[Uint256][]*TxOutput
-	AssetInputAmount  map[Uint256]Fixed64
-	AssetOutputAmount map[Uint256]Fixed64
-	Fee               Fixed64
-	FeePerKB          Fixed64
-
 	hash *Uint256
+}
+
+func (tx *Transaction) String() string {
+	tx.Hash()
+	return "Transaction: {\n\t" +
+		"Hash: " + tx.hash.String() + "\n\t" +
+		"TxType: " + tx.TxType.Name() + "\n\t" +
+		"PayloadVersion: " + fmt.Sprint(tx.PayloadVersion) + "\n\t" +
+		"Payload: " + BytesToHexString(tx.Payload.Data(tx.PayloadVersion)) + "\n\t" +
+		"Attributes: " + fmt.Sprint(tx.Attributes) + "\n\t" +
+		"UTXOInputs: " + fmt.Sprint(tx.UTXOInputs) + "\n\t" +
+		"BalanceInputs: " + fmt.Sprint(tx.BalanceInputs) + "\n\t" +
+		"Outputs: " + fmt.Sprint(tx.Outputs) + "\n\t" +
+		"LockTime: " + fmt.Sprint(tx.LockTime) + "\n\t" +
+		"Programs: " + fmt.Sprint(tx.Programs) + "\n\t" +
+		"}\n"
 }
 
 //Serialize the Transaction
@@ -316,8 +342,9 @@ func (tx *Transaction) GetPrograms() []*program.Program {
 
 func (tx *Transaction) Hash() Uint256 {
 	if tx.hash == nil {
-		d := sig.GetHashData(tx)
-		temp := sha256.Sum256([]byte(d))
+		buf := new(bytes.Buffer)
+		tx.SerializeUnsigned(buf)
+		temp := sha256.Sum256([]byte(buf.Bytes()))
 		f := Uint256(sha256.Sum256(temp[:]))
 		tx.hash = &f
 	}

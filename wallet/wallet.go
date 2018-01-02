@@ -28,8 +28,9 @@ type Wallet interface {
 	DataStore
 
 	VerifyPassword(password []byte) error
-	ChangePassword(newPassword []byte) error
+	ChangePassword(oldPassword, newPassword []byte) error
 
+	AddStandardAddress(publicKey *crypto.PubKey) (*Uint160, error)
 	AddMultiSignAddress(publicKeys []*crypto.PubKey) (*Uint160, error)
 
 	CreateTransaction(fromAddress, toAddress string, amount, fee *Fixed64) (*tx.Transaction, error)
@@ -44,6 +45,7 @@ type Wallet interface {
 
 type WalletImpl struct {
 	DataStore
+	KeyStore
 }
 
 func Create(password []byte) (Wallet, error) {
@@ -64,7 +66,8 @@ func Create(password []byte) (Wallet, error) {
 	dataStore.SyncChainData()
 
 	wallet = &WalletImpl{
-		dataStore,
+		DataStore: dataStore,
+		KeyStore:  keyStore,
 	}
 	return wallet, nil
 }
@@ -77,24 +80,35 @@ func Open() (Wallet, error) {
 		}
 
 		wallet = &WalletImpl{
-			dataStore,
+			DataStore: dataStore,
 		}
 	}
 	return wallet, nil
 }
 
 func (wallet *WalletImpl) VerifyPassword(password []byte) error {
-	_, err := OpenKeyStore(password)
-	return err
-}
-
-func (wallet *WalletImpl) ChangePassword(password []byte) error {
-	err := keyStore.ChangePassword(password)
+	keyStore, err := OpenKeyStore(password)
 	if err != nil {
-		log.Error("Change password error:", err)
 		return err
 	}
+	wallet.KeyStore = keyStore
 	return nil
+}
+
+func (wallet *WalletImpl) AddStandardAddress(publicKey *crypto.PubKey) (*Uint160, error) {
+	redeemScript, err := CreateSignatureRedeemScript(publicKey)
+	if err != nil {
+		return nil, errors.New("[Wallet], CreateStandardRedeemScript failed")
+	}
+	scriptHash, err := ToScriptHash(redeemScript, SignTypeSingle)
+	if err != nil {
+		return nil, errors.New("[Wallet], CreateStandardAddress failed")
+	}
+	err = wallet.AddAddress(scriptHash, redeemScript, AddressTypeSingle)
+	if err != nil {
+		return nil, err
+	}
+	return scriptHash, nil
 }
 
 func (wallet *WalletImpl) AddMultiSignAddress(publicKeys []*crypto.PubKey) (*Uint160, error) {
@@ -110,10 +124,6 @@ func (wallet *WalletImpl) AddMultiSignAddress(publicKeys []*crypto.PubKey) (*Uin
 	if err != nil {
 		return nil, err
 	}
-	// Every time add a new address, sync chain data to find UTXOs of this address
-	wallet.CurrentHeight(ResetHeightCode)
-	wallet.SyncChainData()
-
 	return scriptHash, nil
 }
 
@@ -201,12 +211,13 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 		return nil, errors.New("[Wallet], Available token is not enough")
 	}
 
-	return wallet.newTransaction(txInputs, txOutputs), nil
+	txn := wallet.newTransaction(txInputs, txOutputs)
+	return txn, nil
 }
 
 func (wallet *WalletImpl) Sign(password []byte, txn *tx.Transaction) (*tx.Transaction, error) {
-	// Open user's keystore
-	_, err := OpenKeyStore(password)
+	// Verify password
+	err := wallet.VerifyPassword(password)
 	if err != nil {
 		return nil, err
 	}
@@ -219,24 +230,23 @@ func (wallet *WalletImpl) Sign(password []byte, txn *tx.Transaction) (*tx.Transa
 	if address.Type == AddressTypeSingle {
 
 		// Sign single transaction
-		wallet.signSingleTransaction(address, txn)
+		wallet.signSingleTransaction(password, address, txn)
 
 	} else if address.Type == AddressTypeMulti {
 
 		// Sign multi sign transaction
-		wallet.signMultiTransaction(address, txn)
+		wallet.signMultiTransaction(password, address, txn)
 	}
-
 	return txn, nil
 }
 
-func (wallet *WalletImpl) signSingleTransaction(address *Address, txn *tx.Transaction) (*tx.Transaction, error) {
+func (wallet *WalletImpl) signSingleTransaction(password []byte, address *Address, txn *tx.Transaction) (*tx.Transaction, error) {
 	// Check if current user is a valid signer
-	if address.ProgramHash != keyStore.GetProgramHash() {
+	if address.ProgramHash != wallet.KeyStore.GetProgramHash() {
 		return nil, errors.New("[Wallet], Invalid signer")
 	}
 	// Sign transaction
-	signedTx, err := keyStore.Sign(txn)
+	signedTx, err := wallet.KeyStore.Sign(password, txn)
 	if err != nil {
 		return nil, err
 	}
@@ -244,17 +254,17 @@ func (wallet *WalletImpl) signSingleTransaction(address *Address, txn *tx.Transa
 	buf := new(bytes.Buffer)
 	buf.WriteByte(byte(len(signedTx)))
 	buf.Write(signedTx)
-	var program = &pg.Program{keyStore.GetRedeemScript(), buf.Bytes()}
+	var program = &pg.Program{wallet.KeyStore.GetRedeemScript(), buf.Bytes()}
 	txn.SetPrograms([]*pg.Program{program})
 
 	return txn, nil
 }
 
-func (wallet *WalletImpl) signMultiTransaction(address *Address, txn *tx.Transaction) (*tx.Transaction, error) {
+func (wallet *WalletImpl) signMultiTransaction(password []byte, address *Address, txn *tx.Transaction) (*tx.Transaction, error) {
 	// Check if current user is a valid signer
 	var isSigner bool
 	programHashes := tx.ParseMultisigTransactionCode(address.RedeemScript)
-	userProgramHash := keyStore.GetProgramHash()
+	userProgramHash := wallet.KeyStore.GetProgramHash()
 	for _, programHash := range programHashes {
 		if *userProgramHash == *programHash {
 			isSigner = true
@@ -264,13 +274,12 @@ func (wallet *WalletImpl) signMultiTransaction(address *Address, txn *tx.Transac
 		return nil, errors.New("[Wallet], Invalid multi sign signer")
 	}
 	// Sign transaction
-	signedTx, err := keyStore.Sign(txn)
+	signedTx, err := wallet.KeyStore.Sign(password, txn)
 	if err != nil {
 		return nil, err
 	}
 	// Check if verify program was set
-	programs := txn.GetPrograms()
-	if len(programs) == 0 {
+	if len(txn.GetPrograms()) == 0 {
 		// Add verify program for transaction
 		buf := new(bytes.Buffer)
 		buf.WriteByte(byte(len(signedTx)))
@@ -282,7 +291,8 @@ func (wallet *WalletImpl) signMultiTransaction(address *Address, txn *tx.Transac
 		}
 		var program = &pg.Program{address.RedeemScript, buf.Bytes()}
 		txn.SetPrograms([]*pg.Program{program})
-
+		log.Info("Program Code:", BytesToHexString(address.RedeemScript))
+		log.Info("Program Parameter:", BytesToHexString(buf.Bytes()))
 	} else {
 		// Append signature
 		txn.AppendSignature(signedTx)
@@ -329,7 +339,6 @@ func (wallet *WalletImpl) removeLockedUTXOs(utxos []*AddressUTXO) []*AddressUTXO
 }
 
 func (wallet *WalletImpl) newTransaction(inputs []*tx.UTXOTxInput, outputs []*tx.TxOutput) *tx.Transaction {
-	currentHeight := wallet.CurrentHeight(QueryHeightCode)
 
 	txPayload := &payload.TransferAsset{}
 
@@ -345,6 +354,5 @@ func (wallet *WalletImpl) newTransaction(inputs []*tx.UTXOTxInput, outputs []*tx
 		BalanceInputs: []*tx.BalanceTxInput{},
 		Outputs:       outputs,
 		Programs:      []*pg.Program{},
-		LockTime:      currentHeight,
 	}
 }

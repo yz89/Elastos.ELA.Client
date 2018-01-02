@@ -20,31 +20,6 @@ type Serializable interface {
 	Deserialize(r io.Reader) error
 }
 
-func SerializableToBytes(serializable Serializable) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	err := serializable.Serialize(buf)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-func SerializableFromBytes(serializable Serializable, data []byte)  error {
-	buf := bytes.NewReader(data)
-	return serializable.Deserialize(buf)
-}
-
-func WriteDataList(w io.Writer, list []Serializable) error {
-	len := uint64(len(list))
-	WriteVarUint(w, len)
-
-	for _, data := range list {
-		data.Serialize(w)
-	}
-
-	return nil
-}
-
 /*
  ******************************************************************************
  * public func for outside calling

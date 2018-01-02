@@ -17,6 +17,10 @@ const UINT160SIZE int = 21
 
 type Uint160 [UINT160SIZE]uint8
 
+func (self Uint160) String() string {
+	return BytesToHexString(self.ToArray())
+}
+
 func (u *Uint160) CompareTo(o *Uint160) int {
 	x := u.ToArray()
 	y := o.ToArray()

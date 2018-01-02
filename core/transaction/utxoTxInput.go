@@ -1,10 +1,11 @@
 package transaction
 
 import (
+	"io"
+	"fmt"
+
 	"ELAClient/common"
 	"ELAClient/common/serialization"
-	"fmt"
-	"io"
 )
 
 type UTXOTxInput struct {
@@ -16,6 +17,14 @@ type UTXOTxInput struct {
 
 	// Sequence number
 	Sequence uint32
+}
+
+func (self UTXOTxInput) String() string {
+	return "UTXOTxInput: {\n\t\t" +
+		"ReferTxID: " + self.ReferTxID.String() + "\n\t\t" +
+		"ReferTxOutputIndex: " + fmt.Sprint(self.ReferTxOutputIndex) + "\n\t\t" +
+		"Sequence: " + fmt.Sprint(self.Sequence) + "\n\t\t" +
+		"}"
 }
 
 func (ui *UTXOTxInput) Serialize(w io.Writer) {
@@ -48,7 +57,7 @@ func (ui *UTXOTxInput) Deserialize(r io.Reader) error {
 }
 
 func (ui *UTXOTxInput) ToString() string {
-	return fmt.Sprintf("%x%x", ui.ReferTxID.ToString(), ui.ReferTxOutputIndex)
+	return fmt.Sprintf("%x%x", ui.ReferTxID.String(), ui.ReferTxOutputIndex)
 }
 
 func (ui *UTXOTxInput) Equals(other *UTXOTxInput) bool {

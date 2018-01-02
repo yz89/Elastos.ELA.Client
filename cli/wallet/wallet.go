@@ -7,13 +7,13 @@ import (
 	"strings"
 
 	"ELAClient/crypto"
-	"ELAClient/wallet"
 	. "ELAClient/common"
+	"ELAClient/common/log"
+	walt "ELAClient/wallet"
 	. "ELAClient/cli/common"
 	"ELAClient/common/password"
 
 	"github.com/urfave/cli"
-	"ELAClient/common/log"
 )
 
 const (
@@ -21,78 +21,121 @@ const (
 )
 
 func printLine() {
-	fmt.Println("============================================================")
+	for i := 0; i < 80; i++ {
+		fmt.Print("=")
+	}
+	fmt.Println()
 }
 
-func createWallet(password string) error {
-	_, err := wallet.Create(getPassword([]byte(password), true))
+func createWallet(password []byte) error {
+	defer ClearBytes(password, len(password))
+
+	_, err := walt.Create(getPassword(password, true))
 	if err != nil {
 		return err
 	}
 	return showAccountInfo(password)
 }
 
-func addMultiSignAccount(wallet wallet.Wallet, pubKeysStr string) error {
-	publicKeys := strings.Split(pubKeysStr, ":")
-	if len(publicKeys) < MinMultiSignKeys {
-		return errors.New("public keys is not enough")
-	}
-	var keys []*crypto.PubKey
-	for _, v := range publicKeys {
-		keyBytes, err := HexStringToBytes(v)
+func addAccount(wallet walt.Wallet, content string) error {
+	// Check content type
+	if !strings.Contains(content, ",") { // standard account
+		keyBytes, err := HexStringToBytes(strings.TrimSpace(content))
 		if err != nil {
 			return err
 		}
-		rawKey, err := crypto.DecodePoint(keyBytes)
+		publicKey, err := crypto.DecodePoint(keyBytes)
 		if err != nil {
 			return err
 		}
-		keys = append(keys, rawKey)
+		programHash, err := wallet.AddStandardAddress(publicKey)
+		if err != nil {
+			return err
+		}
+		address, err := programHash.ToAddress()
+		if err != nil {
+			return err
+		}
+		fmt.Println(address)
+	} else { // multi sign account
+		publicKeys := strings.Split(content, ",")
+		if len(publicKeys) < MinMultiSignKeys {
+			return errors.New("public keys is not enough")
+		}
+		var keys []*crypto.PubKey
+		for _, v := range publicKeys {
+			keyBytes, err := HexStringToBytes(strings.TrimSpace(v))
+			if err != nil {
+				return err
+			}
+			publicKey, err := crypto.DecodePoint(keyBytes)
+			if err != nil {
+				return err
+			}
+			keys = append(keys, publicKey)
+		}
+		programHash, err := wallet.AddMultiSignAddress(keys)
+		if err != nil {
+			return err
+		}
+		address, err := programHash.ToAddress()
+		if err != nil {
+			return err
+		}
+		fmt.Println(address)
 	}
-	programHash, err := wallet.AddMultiSignAddress(keys)
-	if err != nil {
-		return err
-	}
-	address, err := programHash.ToAddress()
-	if err != nil {
-		return err
-	}
-	fmt.Println(address)
+	// When add a new address, sync chain data to find UTXOs of this address
+	wallet.CurrentHeight(walt.ResetHeightCode)
+	wallet.SyncChainData()
+
 	return nil
 }
 
-func changePassword(wallet wallet.Wallet) error {
+func changePassword(password []byte, wallet walt.Wallet) error {
 	// Verify old password
-	oldPassword, _ := password.GetPassword()
-	wallet.VerifyPassword(oldPassword)
+	oldPassword := getPassword(password, false)
+	err := wallet.VerifyPassword(oldPassword)
+	if err != nil {
+		return err
+	}
+	defer ClearBytes(oldPassword, len(oldPassword))
 
+	// Input new password
 	fmt.Println("# input new password #")
-	newPassword, _ := password.GetConfirmedPassword()
-	if err := wallet.ChangePassword(newPassword); err != nil {
+	newPassword := getPassword(nil, true)
+	if err := wallet.ChangePassword(oldPassword, newPassword); err != nil {
 		return errors.New("failed to change password")
 	}
+	defer ClearBytes(newPassword, len(newPassword))
+
 	fmt.Println("password changed successful")
 
 	return nil
 }
 
-func showAccountInfo(password string) error {
-	keyStore, err := wallet.OpenKeyStore(getPassword([]byte(password), false))
+func showAccountInfo(password []byte) error {
+	password = getPassword(password, false)
+	defer ClearBytes(password, len(password))
+
+	keyStore, err := walt.OpenKeyStore(password)
 	if err != nil {
 		return err
 	}
 	programHash := keyStore.GetProgramHash()
 	address, _ := programHash.ToAddress()
-	publicKey, _ := keyStore.GetPublicKey().EncodePoint(true)
+	publicKey := keyStore.GetPublicKey(password)
+	publicKeyBytes, _ := publicKey.EncodePoint(true)
+
 	printLine()
 	fmt.Println("Address:     ", address)
-	fmt.Println("Public Key:  ", BytesToHexString(publicKey))
+	fmt.Println("Public Key:  ", BytesToHexString(publicKeyBytes))
 	fmt.Println("ProgramHash: ", BytesToHexString(programHash.ToArrayReverse()))
 	printLine()
+
 	return nil
 }
 
-func listBalanceInfo(wallet wallet.Wallet) error {
+func listBalanceInfo(wallet walt.Wallet) error {
 	wallet.SyncChainData()
 	addresses, err := wallet.GetAddresses()
 	if err != nil {
@@ -113,6 +156,7 @@ func listBalanceInfo(wallet wallet.Wallet) error {
 		fmt.Println("Address:     ", address.Address)
 		fmt.Println("ProgramHash: ", BytesToHexString(address.ProgramHash.ToArrayReverse()))
 		fmt.Println("Balance:     ", balance.String())
+
 		printLine()
 	}
 	return nil
@@ -146,42 +190,42 @@ func walletAction(context *cli.Context) {
 
 	// create wallet
 	if context.Bool("create") {
-		if err := createWallet(pass); err != nil {
-			fmt.Println("error: create wallet failed, msg:", err)
-			os.Exit(1)
+		if err := createWallet([]byte(pass)); err != nil {
+			fmt.Println("error: create wallet failed, ", err)
+			cli.ShowCommandHelpAndExit(context, "create", 1)
 		}
 		return
 	}
 
-	wallet, err := wallet.Open()
+	wallet, err := walt.Open()
 	if err != nil {
-		fmt.Println("error: open wallet failed, msg:", err)
+		fmt.Println("error: open wallet failed, ", err)
 		os.Exit(2)
 	}
 
 	// show account info
 	if context.Bool("account") {
-		if err := showAccountInfo(pass); err != nil {
-			fmt.Println("error: show account info failed, msg:", err)
-			os.Exit(3)
+		if err := showAccountInfo([]byte(pass)); err != nil {
+			fmt.Println("error: show account info failed, ", err)
+			cli.ShowCommandHelpAndExit(context, "account", 3)
 		}
 		return
 	}
 
 	// change password
 	if context.Bool("changepassword") {
-		if err := changePassword(wallet); err != nil {
-			fmt.Println("error: change password failed, msg:", err)
-			os.Exit(4)
+		if err := changePassword([]byte(pass), wallet); err != nil {
+			fmt.Println("error: change password failed, ", err)
+			cli.ShowCommandHelpAndExit(context, "changepassword", 4)
 		}
 		return
 	}
 
 	// add multisig account
-	if pubKeysStr := context.String("addmultisignaccount"); pubKeysStr != "" {
-		if err := addMultiSignAccount(wallet, pubKeysStr); err != nil {
-			fmt.Println("error: add multi sign account failed, msg:", err)
-			os.Exit(5)
+	if pubKeysStr := context.String("addaccount"); pubKeysStr != "" {
+		if err := addAccount(wallet, pubKeysStr); err != nil {
+			fmt.Println("error: add multi sign account failed, ", err)
+			cli.ShowCommandHelpAndExit(context, "addaccount", 5)
 		}
 		return
 	}
@@ -189,35 +233,32 @@ func walletAction(context *cli.Context) {
 	// show addresses balance in this wallet
 	if context.Bool("balance") {
 		if err := listBalanceInfo(wallet); err != nil {
-			fmt.Println("error: list balance info failed, msg:", err)
-			os.Exit(6)
+			fmt.Println("error: list balance info failed, ", err)
+			cli.ShowCommandHelpAndExit(context, "balance", 6)
 		}
 		return
 	}
 
-	// create transaction
-	if context.Bool("createtransaction") {
-		if err := createTransaction(context, wallet); err != nil {
-			fmt.Println("error:", err)
-			os.Exit(7)
-		}
-		return
-	}
-
-	// sign transaction
-	if param := context.String("signtransaction"); param != "" {
-		if err := signTransaction(context, param, wallet); err != nil {
-			fmt.Println("error:", err)
-			os.Exit(7)
-		}
-		return
-	}
-
-	// send transaction
-	if param := context.String("sendtransaction"); param != "" {
-		if err := sendTransaction(param); err != nil {
-			fmt.Println("error:", err)
-			os.Exit(7)
+	// transaction actions
+	if param := context.String("transaction"); param != "" {
+		switch param {
+		case "create":
+			if err := createTransaction(context, wallet); err != nil {
+				fmt.Println("error:", err)
+				os.Exit(701)
+			}
+		case "sign":
+			if err := signTransaction([]byte(pass), context, wallet); err != nil {
+				fmt.Println("error:", err)
+				os.Exit(702)
+			}
+		case "send":
+			if err := sendTransaction(context); err != nil {
+				fmt.Println("error:", err)
+				os.Exit(703)
+			}
+		default:
+			cli.ShowCommandHelpAndExit(context, "transaction", 700)
 		}
 		return
 	}
@@ -225,8 +266,8 @@ func walletAction(context *cli.Context) {
 	// reset wallet
 	if context.Bool("reset") {
 		if err := wallet.Reset(); err != nil {
-			fmt.Println("error: reset wallet data store failed, msg:", err)
-			os.Exit(8)
+			fmt.Println("error: reset wallet data store failed, ", err)
+			cli.ShowCommandHelpAndExit(context, "reset", 8)
 		}
 		fmt.Println("wallet data store was reset successfully")
 		return
@@ -249,7 +290,7 @@ func NewCommand() *cli.Command {
 				Usage: "create wallet",
 			},
 			cli.BoolFlag{
-				Name:  "account",
+				Name:  "account, a",
 				Usage: "show account info",
 			},
 			cli.BoolFlag{
@@ -257,24 +298,22 @@ func NewCommand() *cli.Command {
 				Usage: "change wallet password",
 			},
 			cli.StringFlag{
-				Name:  "addmultisignaccount",
-				Usage: "add new multi-sign account address",
+				Name: "addaccount",
+				Usage: "add a standard account with it's public key" +
+					", or add a multi-sign account using signers public keys",
 			},
 			cli.BoolFlag{
 				Name:  "balance, b",
 				Usage: "list balances",
 			},
-			cli.BoolFlag{
-				Name:  "createtransaction, ct",
-				Usage: "create a transaction use [--from] --to --amount --fee [--lock], or [--from] --multioutput --fee [--lock]",
-			},
 			cli.StringFlag{
-				Name:  "signtransaction, sign",
-				Usage: "sign transaction with the transaction file path or it's content",
-			},
-			cli.StringFlag{
-				Name:  "sendtransaction, send",
-				Usage: "send transaction with the transaction file path or it's content",
+				Name: "transaction, t",
+				Usage: "use [create, sign, send], to create, sign or send a transaction\n" +
+					"\tcreate:\n" +
+					"\t\tuse [--from] --to --amount --fee [--lock], or [--from] --content --fee [--lock]\n" +
+					"\t\tto create a standard transaction, or multi output transaction\n" +
+					"\tsign, send:\n" +
+					"\t\tuse --content to specify the transaction file path or it's content\n",
 			},
 			cli.StringFlag{
 				Name:  "from",
@@ -285,20 +324,21 @@ func NewCommand() *cli.Command {
 				Usage: "the receive address of the transaction",
 			},
 			cli.StringFlag{
-				Name:  "amount, a",
+				Name:  "amount",
 				Usage: "the transfer amount of the transaction",
 			},
 			cli.StringFlag{
-				Name:  "fee, f",
+				Name:  "fee",
 				Usage: "the transfer fee of the transaction",
 			},
 			cli.StringFlag{
-				Name:  "lock, l",
+				Name:  "lock",
 				Usage: "the lock time to specify when the received asset can be spent",
 			},
 			cli.StringFlag{
-				Name:  "multioutput, m",
-				Usage: "the file path to specify a CSV format file with [address,amount] as content",
+				Name: "content",
+				Usage: "the file path to specify a CSV format file with [address,amount] as multi output content,\n" +
+					"or the transaction file path or it's content to be sign or send",
 			},
 			cli.BoolFlag{
 				Name:  "reset",

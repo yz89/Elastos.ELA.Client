@@ -25,6 +25,7 @@ func CreateSignatureRedeemScript(publicKey *crypto.PubKey) ([]byte, error) {
 		return nil, errors.New("[Contracts],CreateSignatureRedeemScript failed.")
 	}
 	buf := new(bytes.Buffer)
+	buf.WriteByte(byte(len(content)))
 	buf.Write(content)
 	buf.WriteByte(byte(CHECKSIG))
 	return buf.Bytes(), nil
@@ -43,12 +44,12 @@ func CreateMultiSignRedeemScript(publicKeys []*crypto.PubKey) ([]byte, error) {
 	sort.Sort(crypto.PubKeySlice(publicKeys))
 
 	for _, pubkey := range publicKeys {
-		temp, err := pubkey.EncodePoint(true)
+		content, err := pubkey.EncodePoint(true)
 		if err != nil {
 			return nil, errors.New("[Contracts],CreateSignatureContract failed.")
 		}
-		buf.WriteByte(byte(len(temp)))
-		buf.Write(temp)
+		buf.WriteByte(byte(len(content)))
+		buf.Write(content)
 	}
 
 	bigKeys := big.NewInt(int64(len(publicKeys)))

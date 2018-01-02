@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"io"
+	"fmt"
 
 	. "ELAClient/common"
 	"ELAClient/common/serialization"
@@ -12,6 +13,15 @@ type TxOutput struct {
 	Value       Fixed64
 	OutputLock  uint32
 	ProgramHash Uint160
+}
+
+func (self TxOutput) String() string {
+	return "TxOutput: {\n\t\t" +
+		"AssetID: " + self.AssetID.String() + "\n\t\t" +
+		"Value: " + self.Value.String() + "\n\t\t" +
+		"OutputLock: " + fmt.Sprint(self.OutputLock) + "\n\t\t" +
+		"ProgramHash: " + self.ProgramHash.String() + "\n\t\t" +
+		"}"
 }
 
 func (o *TxOutput) Serialize(w io.Writer) {

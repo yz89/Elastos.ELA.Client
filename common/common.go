@@ -31,16 +31,9 @@ func ToScriptHash(code []byte, signType int) (*Uint160, error) {
 
 	hash, err := Uint160ParseFromBytes(f)
 	if err != nil {
-		return nil, errors.New("[Common] , ToCodeHash err.")
+		return nil, errors.New("[Common] ,ToScriptHash error")
 	}
 	return hash, nil
-}
-
-func IntToBytes(n int) []byte {
-	tmp := int32(n)
-	bytesBuffer := bytes.NewBuffer([]byte{})
-	binary.Write(bytesBuffer, binary.LittleEndian, tmp)
-	return bytesBuffer.Bytes()
 }
 
 func BytesToInt16(b []byte) int16 {
@@ -62,7 +55,6 @@ func IsEqualBytes(b1 []byte, b2 []byte) bool {
 			return false
 		}
 	}
-
 	return true
 }
 
@@ -93,51 +85,6 @@ func ClearBytes(arr []byte, len int) {
 	for i := 0; i < len; i++ {
 		arr[i] = 0
 	}
-}
-
-func CompareHeight(blockHeight uint64, heights []uint64) bool {
-	for _, height := range heights {
-		if blockHeight < height {
-			return false
-		}
-	}
-	return true
-}
-
-func GetUint16Array(source []byte) ([]uint16, error) {
-	if source == nil {
-		return nil, errors.New("[Common] , GetUint16Array err, source = nil")
-	}
-
-	if len(source)%2 != 0 {
-		return nil, errors.New("[Common] , GetUint16Array err, length of source is odd.")
-	}
-
-	dst := make([]uint16, len(source)/2)
-	for i := 0; i < len(source)/2; i++ {
-		dst[i] = uint16(source[i*2]) + uint16(source[i*2+1])*256
-	}
-
-	return dst, nil
-}
-
-func ToByteArray(source []uint16) []byte {
-	dst := make([]byte, len(source)*2)
-	for i := 0; i < len(source); i++ {
-		dst[i*2] = byte(source[i] % 256)
-		dst[i*2+1] = byte(source[i] / 256)
-	}
-
-	return dst
-}
-
-func SliceRemove(slice []uint32, h uint32) []uint32 {
-	for i, v := range slice {
-		if v == h {
-			return append(slice[:i], slice[i+1:]...)
-		}
-	}
-	return slice
 }
 
 func FileExisted(filename string) bool {

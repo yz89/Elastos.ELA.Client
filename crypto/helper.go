@@ -5,18 +5,19 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha256"
+
 	. "ELAClient/common"
 )
 
-func ToAesKey(password []byte) []byte {
-	defer ClearBytes(password, len(password))
+func ToAesKey(pwd []byte) []byte {
+	pwdhash := sha256.Sum256(pwd)
+	pwdhash2 := sha256.Sum256(pwdhash[:])
 
-	first := sha256.Sum256(password)
-	second := sha256.Sum256(first[:])
+	// Fixme clean the password buffer
+	// ClearBytes(pwd,len(pwd))
+	ClearBytes(pwdhash[:], 32)
 
-	defer ClearBytes(first[:], 32)
-
-	return second[:]
+	return pwdhash2[:]
 }
 
 func AesEncrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
@@ -24,6 +25,8 @@ func AesEncrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
 	if err != nil {
 		return nil, errors.New("invalid decrypt key")
 	}
+	//blockSize := block.BlockSize()
+	//plaintext = PKCS5Padding(plaintext, blockSize)
 	blockMode := cipher.NewCBCEncrypter(block, iv)
 
 	ciphertext := make([]byte, len(plaintext))

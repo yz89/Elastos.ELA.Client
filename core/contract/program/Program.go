@@ -4,6 +4,7 @@ import (
 	"io"
 	"errors"
 
+	"ELAClient/common"
 	"ELAClient/common/serialization"
 )
 
@@ -13,6 +14,13 @@ type Program struct {
 
 	//the program code's parameter
 	Parameter []byte
+}
+
+func (self Program) String() string {
+	return "Program: {\n\t\t" +
+		"Code: " + common.BytesToHexString(self.Code) + "\n\t\t" +
+		"Parameter: " + common.BytesToHexString(self.Parameter) + "\n\t\t" +
+		"}"
 }
 
 //Serialize the Program
