@@ -30,8 +30,7 @@ type Wallet interface {
 	VerifyPassword(password []byte) error
 	ChangePassword(oldPassword, newPassword []byte) error
 
-	AddStandardAddress(publicKey *crypto.PubKey) (*Uint160, error)
-	AddMultiSignAddress(publicKeys []*crypto.PubKey) (*Uint160, error)
+	AddAddresses(publicKey ...*crypto.PubKey) (*Uint160, error)
 
 	CreateTransaction(fromAddress, toAddress string, amount, fee *Fixed64) (*tx.Transaction, error)
 	CreateLockedTransaction(fromAddress, toAddress string, amount, fee *Fixed64, lockedUntil uint32) (*tx.Transaction, error)
@@ -95,35 +94,35 @@ func (wallet *WalletImpl) VerifyPassword(password []byte) error {
 	return nil
 }
 
-func (wallet *WalletImpl) AddStandardAddress(publicKey *crypto.PubKey) (*Uint160, error) {
-	redeemScript, err := CreateSignatureRedeemScript(publicKey)
-	if err != nil {
-		return nil, errors.New("[Wallet], CreateStandardRedeemScript failed")
-	}
-	scriptHash, err := ToScriptHash(redeemScript, SignTypeSingle)
-	if err != nil {
-		return nil, errors.New("[Wallet], CreateStandardAddress failed")
-	}
-	err = wallet.AddAddress(scriptHash, redeemScript, AddressTypeSingle)
-	if err != nil {
-		return nil, err
-	}
-	return scriptHash, nil
-}
+func (wallet *WalletImpl) AddAddresses(publicKeys ...*crypto.PubKey) (*Uint160, error) {
+	var err error
+	var signType int
+	var addressType int
+	var redeemScript []byte
 
-func (wallet *WalletImpl) AddMultiSignAddress(publicKeys []*crypto.PubKey) (*Uint160, error) {
-	multiSigRedeemScript, err := CreateMultiSignRedeemScript(publicKeys)
-	if err != nil {
-		return nil, errors.New("[Wallet], CreateMultiSignRedeemScript failed")
+	if len(publicKeys) == 1 { // Standard address
+		signType = SignTypeSingle
+		addressType = AddressTypeSingle
+		redeemScript, err = CreateSignatureRedeemScript(publicKeys[0])
+	} else { // Multi sign address
+		signType = SignTypeMulti
+		addressType = AddressTypeMulti
+		redeemScript, err = CreateMultiSignRedeemScript(publicKeys)
 	}
-	scriptHash, err := ToScriptHash(multiSigRedeemScript, SignTypeMulti)
 	if err != nil {
-		return nil, errors.New("[Wallet], CreateMultiSignAddress failed")
+		return nil, errors.New("[Wallet], CreateRedeemScript failed")
 	}
-	err = wallet.AddAddress(scriptHash, multiSigRedeemScript, AddressTypeMulti)
+
+	scriptHash, err := ToScriptHash(redeemScript, signType)
+	if err != nil {
+		return nil, errors.New("[Wallet], CreateAddress failed")
+	}
+
+	err = wallet.AddAddress(scriptHash, redeemScript, addressType)
 	if err != nil {
 		return nil, err
 	}
+
 	return scriptHash, nil
 }
 

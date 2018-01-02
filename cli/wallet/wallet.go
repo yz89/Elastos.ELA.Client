@@ -48,7 +48,7 @@ func addAccount(wallet walt.Wallet, content string) error {
 		if err != nil {
 			return err
 		}
-		programHash, err := wallet.AddStandardAddress(publicKey)
+		programHash, err := wallet.AddAddresses(publicKey)
 		if err != nil {
 			return err
 		}
@@ -74,7 +74,7 @@ func addAccount(wallet walt.Wallet, content string) error {
 			}
 			keys = append(keys, publicKey)
 		}
-		programHash, err := wallet.AddMultiSignAddress(keys)
+		programHash, err := wallet.AddAddresses(keys...)
 		if err != nil {
 			return err
 		}
