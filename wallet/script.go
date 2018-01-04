@@ -22,7 +22,7 @@ const (
 func CreateSignatureRedeemScript(publicKey *crypto.PubKey) ([]byte, error) {
 	content, err := publicKey.EncodePoint(true)
 	if err != nil {
-		return nil, errors.New("[Contracts],CreateSignatureRedeemScript failed.")
+		return nil, errors.New("[Wallet],CreateSignatureRedeemScript failed.")
 	}
 	buf := new(bytes.Buffer)
 	buf.WriteByte(byte(len(content)))
@@ -46,7 +46,7 @@ func CreateMultiSignRedeemScript(publicKeys []*crypto.PubKey) ([]byte, error) {
 	for _, pubkey := range publicKeys {
 		content, err := pubkey.EncodePoint(true)
 		if err != nil {
-			return nil, errors.New("[Contracts],CreateSignatureContract failed.")
+			return nil, errors.New("[Wallet],CreateSignatureContract failed.")
 		}
 		buf.WriteByte(byte(len(content)))
 		buf.Write(content)

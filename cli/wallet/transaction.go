@@ -144,7 +144,7 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 func signTransaction(password []byte, context *cli.Context, wallet walt.Wallet) error {
 	defer ClearBytes(password, len(password))
 
-	content, err := getContent(context)
+	content, err := getTransactionContent(context)
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func signTransaction(password []byte, context *cli.Context, wallet walt.Wallet) 
 }
 
 func sendTransaction(context *cli.Context) error {
-	content, err := getContent(context)
+	content, err := getTransactionContent(context)
 	if err != nil {
 		return err
 	}
@@ -203,7 +203,7 @@ func sendTransaction(context *cli.Context) error {
 	return nil
 }
 
-func getContent(context *cli.Context) (string, error) {
+func getTransactionContent(context *cli.Context) (string, error) {
 	// get transaction content
 	content := strings.TrimSpace(context.String("content"))
 	if content == "" {

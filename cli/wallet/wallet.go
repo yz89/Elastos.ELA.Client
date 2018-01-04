@@ -4,12 +4,10 @@ import (
 	"os"
 	"fmt"
 	"errors"
-	"strings"
 
-	"ELAClient/crypto"
+	"ELAClient/wallet"
 	. "ELAClient/common"
 	"ELAClient/common/log"
-	walt "ELAClient/wallet"
 	. "ELAClient/cli/common"
 	"ELAClient/common/password"
 
@@ -30,68 +28,14 @@ func printLine() {
 func createWallet(password []byte) error {
 	defer ClearBytes(password, len(password))
 
-	_, err := walt.Create(getPassword(password, true))
+	_, err := wallet.Create(getPassword(password, true))
 	if err != nil {
 		return err
 	}
 	return showAccountInfo(password)
 }
 
-func addAccount(wallet walt.Wallet, content string) error {
-	// Check content type
-	if !strings.Contains(content, ",") { // standard account
-		keyBytes, err := HexStringToBytes(strings.TrimSpace(content))
-		if err != nil {
-			return err
-		}
-		publicKey, err := crypto.DecodePoint(keyBytes)
-		if err != nil {
-			return err
-		}
-		programHash, err := wallet.AddAddresses(publicKey)
-		if err != nil {
-			return err
-		}
-		address, err := programHash.ToAddress()
-		if err != nil {
-			return err
-		}
-		fmt.Println(address)
-	} else { // multi sign account
-		publicKeys := strings.Split(content, ",")
-		if len(publicKeys) < MinMultiSignKeys {
-			return errors.New("public keys is not enough")
-		}
-		var keys []*crypto.PubKey
-		for _, v := range publicKeys {
-			keyBytes, err := HexStringToBytes(strings.TrimSpace(v))
-			if err != nil {
-				return err
-			}
-			publicKey, err := crypto.DecodePoint(keyBytes)
-			if err != nil {
-				return err
-			}
-			keys = append(keys, publicKey)
-		}
-		programHash, err := wallet.AddAddresses(keys...)
-		if err != nil {
-			return err
-		}
-		address, err := programHash.ToAddress()
-		if err != nil {
-			return err
-		}
-		fmt.Println(address)
-	}
-	// When add a new address, sync chain data to find UTXOs of this address
-	wallet.CurrentHeight(walt.ResetHeightCode)
-	wallet.SyncChainData()
-
-	return nil
-}
-
-func changePassword(password []byte, wallet walt.Wallet) error {
+func changePassword(password []byte, wallet wallet.Wallet) error {
 	// Verify old password
 	oldPassword := getPassword(password, false)
 	err := wallet.VerifyPassword(oldPassword)
@@ -117,7 +61,7 @@ func showAccountInfo(password []byte) error {
 	password = getPassword(password, false)
 	defer ClearBytes(password, len(password))
 
-	keyStore, err := walt.OpenKeyStore(password)
+	keyStore, err := wallet.OpenKeyStore(password)
 	if err != nil {
 		return err
 	}
@@ -135,7 +79,7 @@ func showAccountInfo(password []byte) error {
 	return nil
 }
 
-func listBalanceInfo(wallet walt.Wallet) error {
+func listBalanceInfo(wallet wallet.Wallet) error {
 	wallet.SyncChainData()
 	addresses, err := wallet.GetAddresses()
 	if err != nil {
@@ -197,7 +141,7 @@ func walletAction(context *cli.Context) {
 		return
 	}
 
-	wallet, err := walt.Open()
+	wallet, err := wallet.Open()
 	if err != nil {
 		fmt.Println("error: open wallet failed, ", err)
 		os.Exit(2)
