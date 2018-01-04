@@ -22,7 +22,6 @@ import (
 func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 
 	from := c.String("from")
-	log.Info("From address:", from)
 	if from == "" {
 		addresses, err := wallet.GetAddresses()
 		if err != nil || len(addresses) == 0 {
@@ -32,7 +31,6 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 	}
 
 	feeStr := c.String("fee")
-	log.Info("Fee:", feeStr)
 	if feeStr == "" {
 		return errors.New("use --fee to specify transfer fee")
 	}
@@ -43,19 +41,16 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 	}
 
 	multiOutput := c.String("content")
-	log.Info("Multi output:", multiOutput)
 	if multiOutput != "" {
 		return createMultiOutputTransaction(c, wallet, multiOutput, from, fee)
 	}
 
 	to := c.String("to")
-	log.Info("To address:", to)
 	if to == "" {
 		return errors.New("use --to to specify receiver address")
 	}
 
 	amountStr := c.String("amount")
-	log.Info("Amount:", amountStr)
 	if amountStr == "" {
 		return errors.New("use --amount to specify transfer amount")
 	}
@@ -66,7 +61,6 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 	}
 
 	lockStr := c.String("lock")
-	log.Info("Lock time:", lockStr)
 	var txn *tx.Transaction
 	if lockStr == "" {
 		txn, err = wallet.CreateTransaction(from, to, amount, fee)
@@ -117,7 +111,6 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 	}
 
 	lockStr := c.String("lock")
-	log.Info("Lock time:", lockStr)
 	var txn *tx.Transaction
 	if lockStr == "" {
 		txn, err = wallet.CreateMultiOutputTransaction(from, fee, multiOutput...)

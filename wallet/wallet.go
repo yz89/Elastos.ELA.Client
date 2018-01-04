@@ -60,9 +60,7 @@ func Create(password []byte) (Wallet, error) {
 		return nil, err
 	}
 
-	dataStore.AddAddress(keyStore.GetProgramHash(), keyStore.GetRedeemScript(), AddressTypeSingle)
-
-	dataStore.SyncChainData()
+	dataStore.AddAddress(keyStore.GetProgramHash(), keyStore.GetRedeemScript(), AddressTypeStandard)
 
 	wallet = &WalletImpl{
 		DataStore: dataStore,
@@ -102,11 +100,11 @@ func (wallet *WalletImpl) AddAccount(publicKeys ...*crypto.PubKey) (*Uint160, er
 
 	if len(publicKeys) == 1 { // Standard address
 		signType = SignTypeSingle
-		addressType = AddressTypeSingle
+		addressType = AddressTypeStandard
 		redeemScript, err = CreateSignatureRedeemScript(publicKeys[0])
 	} else { // Multi sign address
 		signType = SignTypeMulti
-		addressType = AddressTypeMulti
+		addressType = AddressTypeMultiSign
 		redeemScript, err = CreateMultiSignRedeemScript(publicKeys)
 	}
 	if err != nil {
@@ -147,16 +145,14 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 	if outputs == nil || len(outputs) == 0 {
 		return nil, errors.New("[Wallet], Invalid transaction target")
 	}
-	// Sync chain block data before create the transaction
+	// Sync chain block data before create transaction
 	wallet.SyncChainData()
 
-	log.Info("Spender address:", fromAddress)
 	// Check if from address is valid
 	spender, err := ToProgramHash(fromAddress)
 	if err != nil {
 		return nil, errors.New("[Wallet], Invalid spender address")
 	}
-	log.Info("Spender programHash:", BytesToHexString(spender.ToArrayReverse()))
 	// Create transaction outputs
 	var totalOutputAmount = Fixed64(0) // The total amount will be spend
 	var txOutputs []*tx.TxOutput       // The outputs in transaction
@@ -178,7 +174,6 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 	}
 	// Get spender's UTXOs
 	UTXOs, err := wallet.GetAddressUTXOs(spender)
-	log.Info("Address UTXOs:", len(UTXOs))
 	if err != nil {
 		return nil, errors.New("[Wallet], Get spender's UTXOs failed")
 	}
@@ -210,8 +205,7 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 		return nil, errors.New("[Wallet], Available token is not enough")
 	}
 
-	txn := wallet.newTransaction(txInputs, txOutputs)
-	return txn, nil
+	return wallet.newTransaction(txInputs, txOutputs), nil
 }
 
 func (wallet *WalletImpl) Sign(password []byte, txn *tx.Transaction) (*tx.Transaction, error) {
@@ -226,22 +220,29 @@ func (wallet *WalletImpl) Sign(password []byte, txn *tx.Transaction) (*tx.Transa
 		return nil, errors.New("[Wallet], Can not find spender's address")
 	}
 	// Look up transaction type
-	if address.Type == AddressTypeSingle {
+	if address.Type == AddressTypeStandard {
 
 		// Sign single transaction
-		wallet.signSingleTransaction(password, address, txn)
+		txn, err = wallet.signStandardTransaction(password, address, txn)
+		if err != nil {
+			return nil, err
+		}
 
-	} else if address.Type == AddressTypeMulti {
+	} else if address.Type == AddressTypeMultiSign {
 
 		// Sign multi sign transaction
-		wallet.signMultiTransaction(password, address, txn)
+		txn, err = wallet.signMultiSignTransaction(password, address, txn)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	return txn, nil
 }
 
-func (wallet *WalletImpl) signSingleTransaction(password []byte, address *Address, txn *tx.Transaction) (*tx.Transaction, error) {
+func (wallet *WalletImpl) signStandardTransaction(password []byte, address *Address, txn *tx.Transaction) (*tx.Transaction, error) {
 	// Check if current user is a valid signer
-	if address.ProgramHash != wallet.KeyStore.GetProgramHash() {
+	if *address.ProgramHash != *wallet.KeyStore.GetProgramHash() {
 		return nil, errors.New("[Wallet], Invalid signer")
 	}
 	// Sign transaction
@@ -249,20 +250,20 @@ func (wallet *WalletImpl) signSingleTransaction(password []byte, address *Addres
 	if err != nil {
 		return nil, err
 	}
-	// Create verify program for transaction
+	// Add verify program for transaction
 	buf := new(bytes.Buffer)
 	buf.WriteByte(byte(len(signedTx)))
 	buf.Write(signedTx)
-	var program = &pg.Program{wallet.KeyStore.GetRedeemScript(), buf.Bytes()}
+	var program = &pg.Program{address.RedeemScript, buf.Bytes()}
 	txn.SetPrograms([]*pg.Program{program})
 
 	return txn, nil
 }
 
-func (wallet *WalletImpl) signMultiTransaction(password []byte, address *Address, txn *tx.Transaction) (*tx.Transaction, error) {
+func (wallet *WalletImpl) signMultiSignTransaction(password []byte, address *Address, txn *tx.Transaction) (*tx.Transaction, error) {
 	// Check if current user is a valid signer
 	var isSigner bool
-	programHashes := tx.ParseMultisigTransactionCode(address.RedeemScript)
+	programHashes := tx.ParseMultiSignTransactionCode(address.RedeemScript)
 	userProgramHash := wallet.KeyStore.GetProgramHash()
 	for _, programHash := range programHashes {
 		if *userProgramHash == *programHash {
@@ -290,8 +291,6 @@ func (wallet *WalletImpl) signMultiTransaction(password []byte, address *Address
 		}
 		var program = &pg.Program{address.RedeemScript, buf.Bytes()}
 		txn.SetPrograms([]*pg.Program{program})
-		log.Info("Program Code:", BytesToHexString(address.RedeemScript))
-		log.Info("Program Parameter:", BytesToHexString(buf.Bytes()))
 	} else {
 		// Append signature
 		txn.AppendSignature(signedTx)
@@ -328,7 +327,6 @@ func (wallet *WalletImpl) removeLockedUTXOs(utxos []*AddressUTXO) []*AddressUTXO
 	var availableUTXOs []*AddressUTXO
 	var currentHeight = wallet.CurrentHeight(QueryHeightCode)
 	for _, utxo := range utxos {
-		log.Info("UTXO input:", *utxo.Input, ", value:", utxo.Amount.String())
 		if utxo.Input.Sequence > currentHeight {
 			continue
 		}

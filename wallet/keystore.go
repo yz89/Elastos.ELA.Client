@@ -206,9 +206,9 @@ func (store *KeyStoreImpl) GetRedeemScript() []byte {
 }
 
 func (store *KeyStoreImpl) GetProgramHash() *Uint160 {
-	programHash, _ := HexStringToBytes(store.ProgramHash)
-	uint160, _ := Uint160ParseFromBytes(programHash)
-	return uint160
+	programHashBytes, _ := HexStringToBytes(store.ProgramHash)
+	programHash, _ := Uint160ParseFromBytes(programHashBytes)
+	return programHash
 }
 
 func (store *KeyStoreImpl) Sign(password []byte, txn *tx.Transaction) ([]byte, error) {

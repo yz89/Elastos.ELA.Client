@@ -29,7 +29,7 @@ func miningAction(c *cli.Context) (err error) {
 		return nil
 	}
 
-	if num := c.String("discrete"); num != "" {
+	if num := c.String("mine"); num != "" {
 		number, err := strconv.ParseInt(num, 10, 16)
 		if err != nil || number < 1 {
 			return errors.New("[number] must be a positive integer")
