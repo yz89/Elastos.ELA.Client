@@ -40,7 +40,7 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 		return errors.New("invalid transaction fee")
 	}
 
-	multiOutput := c.String("content")
+	multiOutput := c.String("file")
 	if multiOutput != "" {
 		return createMultiOutputTransaction(c, wallet, multiOutput, from, fee)
 	}
@@ -197,27 +197,35 @@ func sendTransaction(context *cli.Context) error {
 }
 
 func getTransactionContent(context *cli.Context) (string, error) {
-	// get transaction content
-	content := strings.TrimSpace(context.String("content"))
-	if content == "" {
-		return "", errors.New("content should be the transaction file path or it's content")
+
+	// If parameter with file path is not empty, read content from file
+	if filePath := strings.TrimSpace(context.String("file")); filePath != "" {
+
+		if _, err := os.Stat(filePath); err != nil {
+			return "", errors.New("invalid transaction file path")
+		}
+		file, err := os.OpenFile(filePath, os.O_RDONLY, 0666)
+		if err != nil {
+			return "", errors.New("open transaction file failed")
+		}
+		rawData, err := ioutil.ReadAll(file)
+		if err != nil {
+			return "", errors.New("read transaction file failed")
+		}
+
+		content := strings.TrimSpace(string(rawData))
+		// File content can not by empty
+		if content == "" {
+			return "", errors.New("transaction file is empty")
+		}
+		return content, nil
 	}
 
-	var err error
-	var rawData []byte
-	if strings.Contains(content, "/") { // if parameter is a file path
-		if _, err = os.Stat(content); err != nil {
-			return content, errors.New("invalid transaction file path")
-		}
-		file, err := os.OpenFile(content, os.O_RDONLY, 0666)
-		if err != nil {
-			return content, errors.New("open transaction file failed")
-		}
-		rawData, err = ioutil.ReadAll(file)
-		if err != nil {
-			return content, errors.New("read transaction file failed")
-		}
-		return string(rawData), nil
+	content := strings.TrimSpace(context.String("hex"))
+	// Hex string content can not be empty
+	if content == "" {
+		return "", errors.New("transaction hex string is empty")
 	}
+
 	return content, nil
 }

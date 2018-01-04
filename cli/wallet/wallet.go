@@ -280,9 +280,13 @@ func NewCommand() *cli.Command {
 				Usage: "the lock time to specify when the received asset can be spent",
 			},
 			cli.StringFlag{
-				Name: "content",
-				Usage: "the file path to specify a CSV format file with [address,amount] as multi output content,\n" +
-					"or the transaction file path or it's content to be sign or send",
+				Name:  "hex",
+				Usage: "the transaction content in hex string format to be sign or send",
+			},
+			cli.StringFlag{
+				Name: "file, f",
+				Usage: "the file path to specify a CSV format file path with [address,amount] as multi output content,\n" +
+					"or the transaction file path with the hex string content to be sign or send",
 			},
 			cli.BoolFlag{
 				Name:  "reset",
@@ -290,7 +294,7 @@ func NewCommand() *cli.Command {
 			},
 		},
 		Action: walletAction,
-		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
+		OnUsageError: func(c *cli.Context, err error, subCommand bool) error {
 			PrintError(c, err, "wallet")
 			return cli.NewExitError("", 1)
 		},
