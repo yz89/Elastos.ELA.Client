@@ -11,6 +11,7 @@ import (
 	tx "ELAClient/core/transaction"
 
 	_ "github.com/mattn/go-sqlite3"
+	"os"
 )
 
 /*
@@ -41,14 +42,11 @@ const (
 				AddressId INTEGER,
 				FOREIGN KEY(AddressId) REFERENCES Addresses(Id)
 			);`
-	DropTables = `DROP TABLE IF EXISTS info;
-				DROP TABLE IF EXISTS Addresses;
-				DROP TABLE IF EXISTS UTXOs;`
 )
 
 const (
-	AddressTypeSingle = 1
-	AddressTypeMulti  = 2
+	AddressTypeStandard  = 1
+	AddressTypeMultiSign = 2
 )
 
 type Address struct {
@@ -146,22 +144,27 @@ func (store *DataStoreImpl) catchSystemSignals() {
 }
 
 func (store *DataStoreImpl) ResetDataStore() error {
-	store.Lock()
-	defer store.Unlock()
 
-	stmt, err := store.Prepare(DropTables)
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec()
+	addresses, err := store.GetAddresses()
 	if err != nil {
 		return err
 	}
 
-	_, err = initDB(true)
+	store.DB.Close()
+	os.Remove(DBName)
+
+	store.DB, err = initDB(true)
 	if err != nil {
 		return err
 	}
+
+	for _, address := range addresses {
+		err = store.AddAddress(address.ProgramHash, address.RedeemScript, address.Type)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
