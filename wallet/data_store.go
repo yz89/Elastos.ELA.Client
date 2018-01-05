@@ -107,22 +107,22 @@ func initDB(create bool) (*sql.DB, error) {
 		log.Error("Open data db error:", err)
 		return nil, err
 	}
+	// Create info table
+	_, err = db.Exec(CreateInfoTable)
+	if err != nil {
+		return nil, err
+	}
+	// Create addresses table
+	_, err = db.Exec(CreateAddressesTable)
+	if err != nil {
+		return nil, err
+	}
+	// Create UTXOs table
+	_, err = db.Exec(CreateUTXOsTable)
+	if err != nil {
+		return nil, err
+	}
 	if create {
-		// Create info table
-		_, err = db.Exec(CreateInfoTable)
-		if err != nil {
-			return nil, err
-		}
-		// Create addresses table
-		_, err = db.Exec(CreateAddressesTable)
-		if err != nil {
-			return nil, err
-		}
-		// Create UTXOs table
-		_, err = db.Exec(CreateUTXOsTable)
-		if err != nil {
-			return nil, err
-		}
 		// Insert initial height
 		stmt, err := db.Prepare("INSERT INTO Info(Name, Value) values(?,?)")
 		if err != nil {
