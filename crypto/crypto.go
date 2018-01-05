@@ -20,11 +20,9 @@ type CryptoAlgSet struct {
 	Curve     elliptic.Curve
 }
 
-var AlgChoice int
-
 var algSet CryptoAlgSet
 
-type PubKey struct {
+type PublicKey struct {
 	X, Y *big.Int
 }
 
@@ -33,18 +31,18 @@ func init() {
 	algSet.EccParams = *(algSet.Curve.Params())
 }
 
-func GenKeyPair() ([]byte, *PubKey, error) {
+func GenKeyPair() ([]byte, *PublicKey, error) {
 
 	privateKey, err := ecdsa.GenerateKey(algSet.Curve, rand.Reader)
 	if err != nil {
 		return nil, nil, errors.New("Generate key pair error")
 	}
 
-	mPubKey := new(PubKey)
-	mPubKey.X = new(big.Int).Set(privateKey.PublicKey.X)
-	mPubKey.Y = new(big.Int).Set(privateKey.PublicKey.Y)
+	publicKey := new(PublicKey)
+	publicKey.X = new(big.Int).Set(privateKey.PublicKey.X)
+	publicKey.Y = new(big.Int).Set(privateKey.PublicKey.Y)
 
-	return privateKey.D.Bytes(), mPubKey, nil
+	return privateKey.D.Bytes(), publicKey, nil
 }
 
 func Sign(priKey []byte, data []byte) ([]byte, error) {
@@ -74,7 +72,7 @@ func Sign(priKey []byte, data []byte) ([]byte, error) {
 	return signature, nil
 }
 
-func Verify(publicKey PubKey, data []byte, signature []byte) error {
+func Verify(publicKey PublicKey, data []byte, signature []byte) error {
 	len := len(signature)
 	if len != SIGNATURELEN {
 		fmt.Printf("Unknown signature length %d\n", len)
@@ -100,7 +98,7 @@ func Verify(publicKey PubKey, data []byte, signature []byte) error {
 
 }
 
-type PubKeySlice []*PubKey
+type PubKeySlice []*PublicKey
 
 func (p PubKeySlice) Len() int { return len(p) }
 func (p PubKeySlice) Less(i, j int) bool {
@@ -114,7 +112,7 @@ func (p PubKeySlice) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
 }
 
-func Equal(e1 *PubKey, e2 *PubKey) bool {
+func Equal(e1 *PublicKey, e2 *PublicKey) bool {
 	r := e1.X.Cmp(e2.X)
 	if r != 0 {
 		return false

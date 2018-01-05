@@ -30,7 +30,7 @@ type Wallet interface {
 	VerifyPassword(password []byte) error
 	ChangePassword(oldPassword, newPassword []byte) error
 
-	AddAccount(publicKey ...*crypto.PubKey) (*Uint160, error)
+	AddAccount(publicKey ...*crypto.PublicKey) (*Uint160, error)
 
 	CreateTransaction(fromAddress, toAddress string, amount, fee *Fixed64) (*tx.Transaction, error)
 	CreateLockedTransaction(fromAddress, toAddress string, amount, fee *Fixed64, lockedUntil uint32) (*tx.Transaction, error)
@@ -92,7 +92,7 @@ func (wallet *WalletImpl) VerifyPassword(password []byte) error {
 	return nil
 }
 
-func (wallet *WalletImpl) AddAccount(publicKeys ...*crypto.PubKey) (*Uint160, error) {
+func (wallet *WalletImpl) AddAccount(publicKeys ...*crypto.PublicKey) (*Uint160, error) {
 	var err error
 	var signType int
 	var addressType int

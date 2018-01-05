@@ -22,7 +22,7 @@ const (
 type Keystore interface {
 	ChangePassword(oldPassword, newPassword []byte) error
 
-	GetPublicKey() *crypto.PubKey
+	GetPublicKey() *crypto.PublicKey
 	GetRedeemScript() []byte
 	GetProgramHash() *Uint160
 
@@ -34,7 +34,7 @@ type KeystoreImpl struct {
 
 	*KeystoreFile
 
-	publicKey    *crypto.PubKey
+	publicKey    *crypto.PublicKey
 	redeemScript []byte
 	programHash  *Uint160
 }
@@ -79,13 +79,18 @@ func CreateKeystore(password []byte) (Keystore, error) {
 	keystoreFile.SetMasterKeyEncrypted(masterKeyEncrypted)
 
 	// Generate new key pair
-	privateKey, publicKey, _ := crypto.GenKeyPair()
-	keystore.init(privateKey, publicKey)
+	privateKey, publicKey, err := crypto.GenKeyPair()
+	if err != nil {
+		return nil, err
+	}
 
 	privateKeyEncrypted, err := keystore.encryptPrivateKey(masterKey, passwordKey, privateKey, publicKey)
 	defer ClearBytes(privateKeyEncrypted, len(privateKeyEncrypted))
 	// Set private key encrypted
 	keystoreFile.SetPrivateKeyEncrypted(privateKeyEncrypted)
+
+	// Init keystore parameters
+	keystore.init(privateKey, publicKey)
 
 	err = keystoreFile.SaveToFile()
 	if err != nil {
@@ -126,7 +131,7 @@ func OpenKeystore(password []byte) (Keystore, error) {
 	return keystore, nil
 }
 
-func (store *KeystoreImpl) init(privateKey []byte, publicKey *crypto.PubKey) error {
+func (store *KeystoreImpl) init(privateKey []byte, publicKey *crypto.PublicKey) error {
 	defer ClearBytes(privateKey, len(privateKey))
 
 	// Set public key
@@ -224,7 +229,7 @@ func (store *KeystoreImpl) ChangePassword(oldPassword, newPassword []byte) error
 	return nil
 }
 
-func (store *KeystoreImpl) GetPublicKey() *crypto.PubKey {
+func (store *KeystoreImpl) GetPublicKey() *crypto.PublicKey {
 	return store.publicKey
 }
 
@@ -285,7 +290,7 @@ func (store *KeystoreImpl) decryptMasterKey(passwordKey []byte) (masterKey []byt
 	return masterKey, nil
 }
 
-func (store *KeystoreImpl) encryptPrivateKey(masterKey, passwordKey, privateKey []byte, publicKey *crypto.PubKey) ([]byte, error) {
+func (store *KeystoreImpl) encryptPrivateKey(masterKey, passwordKey, privateKey []byte, publicKey *crypto.PublicKey) ([]byte, error) {
 	decryptedPrivateKey := make([]byte, 96)
 	defer ClearBytes(decryptedPrivateKey, 96)
 
@@ -312,7 +317,7 @@ func (store *KeystoreImpl) encryptPrivateKey(masterKey, passwordKey, privateKey 
 	return encryptedPrivateKey, nil
 }
 
-func (store *KeystoreImpl) decryptPrivateKey(passwordKey []byte) ([]byte, *crypto.PubKey, error) {
+func (store *KeystoreImpl) decryptPrivateKey(passwordKey []byte) ([]byte, *crypto.PublicKey, error) {
 	privateKeyEncrypted, err := store.GetPrivetKeyEncrypted()
 	if err != nil {
 		return nil, nil, err

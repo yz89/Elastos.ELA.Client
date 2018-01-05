@@ -1,7 +1,6 @@
 package serialization
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -155,33 +154,12 @@ func ReadVarString(reader io.Reader) (string, error) {
 	return string(val), nil
 }
 
-func GetVarUintSize(value uint64) int {
-	if value < 0xfd {
-		return 1
-	} else if value <= 0xffff {
-		return 3
-	} else if value <= 0xFFFFFFFF {
-		return 5
-	} else {
-		return 9
-	}
-}
-
 func ReadBytes(reader io.Reader, length uint64) ([]byte, error) {
 	str, err := byteXReader(reader, length)
 	if err != nil {
 		return nil, err
 	}
 	return str, nil
-}
-
-func ReadUint8(reader io.Reader) (uint8, error) {
-	var p [1]byte
-	n, err := reader.Read(p[:])
-	if n <= 0 || err != nil {
-		return 0, ErrEof
-	}
-	return uint8(p[0]), nil
 }
 
 func ReadUint16(reader io.Reader) (uint16, error) {
@@ -200,20 +178,6 @@ func ReadUint32(reader io.Reader) (uint32, error) {
 		return 0, ErrEof
 	}
 	return binary.LittleEndian.Uint32(p[:]), nil
-}
-
-func ReadUint64(reader io.Reader) (uint64, error) {
-	var p [8]byte
-	n, err := reader.Read(p[:])
-	if n <= 0 || err != nil {
-		return 0, ErrEof
-	}
-	return binary.LittleEndian.Uint64(p[:]), nil
-}
-
-func ReadDataList(reader io.Reader) ([]Serializable, error) {
-
-	return nil, nil
 }
 
 func WriteUint8(writer io.Writer, val uint8) error {
@@ -237,19 +201,6 @@ func WriteUint32(writer io.Writer, val uint32) error {
 	return err
 }
 
-func WriteUint64(writer io.Writer, val uint64) error {
-	var p [8]byte
-	binary.LittleEndian.PutUint64(p[:], val)
-	_, err := writer.Write(p[:])
-	return err
-}
-
-func ToArray(data Serializable) []byte {
-	b_buf := new(bytes.Buffer)
-	data.Serialize(b_buf)
-	return b_buf.Bytes()
-}
-
 //**************************************************************************
 //**    internal func                                                    ***
 //**************************************************************************
@@ -264,15 +215,4 @@ func byteXReader(reader io.Reader, x uint64) ([]byte, error) {
 		return p[:], nil
 	}
 	return p, err
-}
-
-func WriteBool(writer io.Writer, val bool) error {
-	err := binary.Write(writer, binary.LittleEndian, val)
-	return err
-}
-
-func ReadBool(reader io.Reader) (bool, error) {
-	var x bool
-	err := binary.Read(reader, binary.LittleEndian, &x)
-	return x, err
 }

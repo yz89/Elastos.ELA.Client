@@ -241,6 +241,10 @@ func NewCommand() *cli.Command {
 				Name:  "changepassword",
 				Usage: "change wallet password",
 			},
+			cli.BoolFlag{
+				Name:  "reset",
+				Usage: "reset wallet data store",
+			},
 			cli.StringFlag{
 				Name: "addaccount",
 				Usage: "add a standard account with it's public key" +
@@ -254,7 +258,7 @@ func NewCommand() *cli.Command {
 				Name: "transaction, t",
 				Usage: "use [create, sign, send], to create, sign or send a transaction\n" +
 					"\tcreate:\n" +
-					"\t\tuse [--from] --to --amount --fee [--lock], or [--from] --content --fee [--lock]\n" +
+					"\t\tuse [--from] --to --amount --fee [--lock], or [--from] --file --fee [--lock]\n" +
 					"\t\tto create a standard transaction, or multi output transaction\n" +
 					"\tsign, send:\n" +
 					"\t\tuse --content to specify the transaction file path or it's content\n",
@@ -287,10 +291,6 @@ func NewCommand() *cli.Command {
 				Name: "file, f",
 				Usage: "the file path to specify a CSV format file path with [address,amount] as multi output content,\n" +
 					"or the transaction file path with the hex string content to be sign or send",
-			},
-			cli.BoolFlag{
-				Name:  "reset",
-				Usage: "reset wallet data store",
 			},
 		},
 		Action: walletAction,

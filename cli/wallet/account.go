@@ -41,7 +41,7 @@ func addAccount(wallet Wallet, content string) error {
 	return nil
 }
 
-func getPublicKeys(content string) ([]*crypto.PubKey, error) {
+func getPublicKeys(content string) ([]*crypto.PublicKey, error) {
 	// Content can not be empty
 	if content == "" {
 		return nil, errors.New("content should be the public key[s] file path or public key strings separated by comma")
@@ -67,7 +67,7 @@ func getPublicKeys(content string) ([]*crypto.PubKey, error) {
 	}
 
 	// Decode public keys from public key strings
-	var publicKeys []*crypto.PubKey
+	var publicKeys []*crypto.PublicKey
 	for _, v := range publicKeyStrings {
 		keyBytes, err := HexStringToBytes(strings.TrimSpace(v))
 		if err != nil {

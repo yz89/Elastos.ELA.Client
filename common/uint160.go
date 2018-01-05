@@ -38,7 +38,7 @@ func (u *Uint160) CompareTo(o *Uint160) int {
 }
 
 func (u *Uint160) ToArray() []byte {
-	var x []byte = make([]byte, UINT160SIZE)
+	var x = make([]byte, UINT160SIZE)
 	for i := 0; i < UINT160SIZE; i++ {
 		x[i] = byte(u[i])
 	}
@@ -46,7 +46,7 @@ func (u *Uint160) ToArray() []byte {
 	return x
 }
 func (u *Uint160) ToArrayReverse() []byte {
-	var x []byte = make([]byte, UINT160SIZE)
+	var x = make([]byte, UINT160SIZE)
 	for i, j := 0, UINT160SIZE-1; i < j; i, j = i+1, j-1 {
 		x[i], x[j] = byte(u[j]), byte(u[i])
 	}

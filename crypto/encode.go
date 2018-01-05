@@ -203,7 +203,7 @@ func curveSqrt(ySquare *big.Int, curve *elliptic.CurveParams) *big.Int {
 }
 
 // deCompress is for computing the coordinate of Y based the coordinate of X
-func deCompress(yTilde int, xValue []byte, curve *elliptic.CurveParams) (*PubKey, error) {
+func deCompress(yTilde int, xValue []byte, curve *elliptic.CurveParams) (*PublicKey, error) {
 	xCoord := big.NewInt(0)
 	xCoord.SetBytes(xValue)
 
@@ -230,10 +230,10 @@ func deCompress(yTilde int, xValue []byte, curve *elliptic.CurveParams) (*PubKey
 	} else {
 		yCoord.Set(yValue)
 	}
-	return &PubKey{xCoord, yCoord}, nil
+	return &PublicKey{xCoord, yCoord}, nil
 }
 
-func DecodePoint(encodeData []byte) (*PubKey, error) {
+func DecodePoint(encodeData []byte) (*PublicKey, error) {
 	if nil == encodeData {
 		return nil, errors.New("The encodeData cann't be nil")
 	}
@@ -242,7 +242,7 @@ func DecodePoint(encodeData []byte) (*PubKey, error) {
 
 	switch encodeData[0] {
 	case 0x00:
-		return &PubKey{nil, nil}, nil
+		return &PublicKey{nil, nil}, nil
 
 	case 0x02, 0x03: //compressed
 		if len(encodeData) != expectedLength+1 {
@@ -260,14 +260,14 @@ func DecodePoint(encodeData []byte) (*PubKey, error) {
 	case 0x04, 0x06, 0x07: //uncompressed
 		pubKeyX := new(big.Int).SetBytes(encodeData[FLAGLEN: FLAGLEN+XORYVALUELEN])
 		pubKeyY := new(big.Int).SetBytes(encodeData[FLAGLEN+XORYVALUELEN: NOCOMPRESSEDLEN])
-		return &PubKey{pubKeyX, pubKeyY}, nil
+		return &PublicKey{pubKeyX, pubKeyY}, nil
 
 	default:
 		return nil, errors.New("The encodeData format is error")
 	}
 }
 
-func (e *PubKey) EncodePoint(isCommpressed bool) ([]byte, error) {
+func (e *PublicKey) EncodePoint(isCommpressed bool) ([]byte, error) {
 	//if X is infinity, then Y cann't be computed, so here used "||"
 	if nil == e.X || nil == e.Y {
 		infinity := make([]byte, INFINITYLEN)
@@ -300,7 +300,7 @@ func (e *PubKey) EncodePoint(isCommpressed bool) ([]byte, error) {
 	return encodedData, nil
 }
 
-func NewPubKey(priKey []byte) *PubKey {
+func NewPubKey(priKey []byte) *PublicKey {
 	privateKey := new(ecdsa.PrivateKey)
 	privateKey.PublicKey.Curve = algSet.Curve
 
@@ -310,7 +310,7 @@ func NewPubKey(priKey []byte) *PubKey {
 
 	privateKey.PublicKey.X, privateKey.PublicKey.Y = algSet.Curve.ScalarBaseMult(k.Bytes())
 
-	pubKey := new(PubKey)
+	pubKey := new(PublicKey)
 	pubKey.X = privateKey.PublicKey.X
 	pubKey.Y = privateKey.PublicKey.Y
 	return pubKey

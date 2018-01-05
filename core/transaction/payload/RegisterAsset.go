@@ -8,8 +8,6 @@ import (
 	"ELAClient/core/asset"
 )
 
-const RegisterPayloadVersion byte = 0x00
-
 type RegisterAsset struct {
 	Asset      *asset.Asset
 	Amount     common.Fixed64

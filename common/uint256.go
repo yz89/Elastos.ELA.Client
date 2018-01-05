@@ -28,7 +28,7 @@ func (u *Uint256) CompareTo(o Uint256) int {
 }
 
 func (u *Uint256) ToArray() []byte {
-	var x []byte = make([]byte, UINT256SIZE)
+	var x = make([]byte, UINT256SIZE)
 	for i := 0; i < 32; i++ {
 		x[i] = byte(u[i])
 	}
@@ -36,7 +36,7 @@ func (u *Uint256) ToArray() []byte {
 	return x
 }
 func (u *Uint256) ToArrayReverse() []byte {
-	var x []byte = make([]byte, UINT256SIZE)
+	var x = make([]byte, UINT256SIZE)
 	for i, j := 0, UINT256SIZE-1; i < j; i, j = i+1, j-1 {
 		x[i], x[j] = byte(u[j]), byte(u[i])
 	}
@@ -81,19 +81,6 @@ func Uint256ParseFromBytes(f []byte) (*Uint256, error) {
 	var hash [32]uint8
 	for i := 0; i < 32; i++ {
 		hash[i] = f[i]
-	}
-	value := Uint256(hash)
-	return &value, nil
-}
-
-func Uint256ParseFromReverseBytes(f []byte) (*Uint256, error) {
-	if len(f) != UINT256SIZE {
-		return nil, errors.New("[Common]: Uint256ParseFromBytes err, len != 32")
-	}
-
-	var hash [32]uint8
-	for i := 0; i < 32; i++ {
-		hash[i] = f[32-i]
 	}
 	value := Uint256(hash)
 	return &value, nil

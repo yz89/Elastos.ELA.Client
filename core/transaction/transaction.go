@@ -219,14 +219,10 @@ func (tx *Transaction) DeserializeUnsignedWithoutType(r io.Reader) error {
 	}
 
 	switch tx.TxType {
-	case CoinBase:
-		tx.Payload = new(payload.CoinBase)
 	case RegisterAsset:
 		tx.Payload = new(payload.RegisterAsset)
 	case TransferAsset:
 		tx.Payload = new(payload.TransferAsset)
-	case Record:
-		tx.Payload = new(payload.Record)
 	case Deploy:
 	default:
 		return errors.New("[Transaction], invalid transaction type.")

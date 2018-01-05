@@ -19,7 +19,7 @@ const (
 	CHECKMULTISIG = 0xAE
 )
 
-func CreateSignatureRedeemScript(publicKey *crypto.PubKey) ([]byte, error) {
+func CreateSignatureRedeemScript(publicKey *crypto.PublicKey) ([]byte, error) {
 	content, err := publicKey.EncodePoint(true)
 	if err != nil {
 		return nil, errors.New("[Wallet],CreateSignatureRedeemScript failed.")
@@ -31,7 +31,7 @@ func CreateSignatureRedeemScript(publicKey *crypto.PubKey) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func CreateMultiSignRedeemScript(publicKeys []*crypto.PubKey) ([]byte, error) {
+func CreateMultiSignRedeemScript(publicKeys []*crypto.PublicKey) ([]byte, error) {
 	M := len(publicKeys)/2 + 1
 
 	bigM := big.NewInt(int64(M))
