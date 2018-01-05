@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"os"
 	"math"
 	"sync"
 	"bytes"
@@ -11,7 +12,6 @@ import (
 	tx "ELAClient/core/transaction"
 
 	_ "github.com/mattn/go-sqlite3"
-	"os"
 )
 
 /*

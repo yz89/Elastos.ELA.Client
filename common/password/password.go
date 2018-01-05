@@ -11,11 +11,11 @@ import (
 // GetPassword gets password from user input
 func GetPassword() ([]byte, error) {
 	fmt.Printf("Password:")
-	passwd, err := gopass.GetPasswd()
+	password, err := gopass.GetPasswd()
 	if err != nil {
 		return nil, err
 	}
-	return passwd, nil
+	return password, nil
 }
 
 // GetConfirmedPassword gets double confirmed password from user input

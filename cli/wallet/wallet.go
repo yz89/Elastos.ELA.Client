@@ -61,13 +61,13 @@ func showAccountInfo(password []byte) error {
 	password = getPassword(password, false)
 	defer ClearBytes(password, len(password))
 
-	keyStore, err := wallet.OpenKeyStore(password)
+	keyStore, err := wallet.OpenKeystore(password)
 	if err != nil {
 		return err
 	}
 	programHash := keyStore.GetProgramHash()
 	address, _ := programHash.ToAddress()
-	publicKey := keyStore.GetPublicKey(password)
+	publicKey := keyStore.GetPublicKey()
 	publicKeyBytes, _ := publicKey.EncodePoint(true)
 
 	printLine()

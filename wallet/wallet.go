@@ -44,11 +44,11 @@ type Wallet interface {
 
 type WalletImpl struct {
 	DataStore
-	KeyStore
+	Keystore
 }
 
 func Create(password []byte) (Wallet, error) {
-	keyStore, err := CreateKeyStore(password)
+	keyStore, err := CreateKeystore(password)
 	if err != nil {
 		log.Error("Wallet create key store failed:", err)
 		return nil, err
@@ -64,7 +64,7 @@ func Create(password []byte) (Wallet, error) {
 
 	wallet = &WalletImpl{
 		DataStore: dataStore,
-		KeyStore:  keyStore,
+		Keystore:  keyStore,
 	}
 	return wallet, nil
 }
@@ -84,11 +84,11 @@ func Open() (Wallet, error) {
 }
 
 func (wallet *WalletImpl) VerifyPassword(password []byte) error {
-	keyStore, err := OpenKeyStore(password)
+	keyStore, err := OpenKeystore(password)
 	if err != nil {
 		return err
 	}
-	wallet.KeyStore = keyStore
+	wallet.Keystore = keyStore
 	return nil
 }
 
@@ -242,11 +242,11 @@ func (wallet *WalletImpl) Sign(password []byte, txn *tx.Transaction) (*tx.Transa
 
 func (wallet *WalletImpl) signStandardTransaction(password []byte, address *Address, txn *tx.Transaction) (*tx.Transaction, error) {
 	// Check if current user is a valid signer
-	if *address.ProgramHash != *wallet.KeyStore.GetProgramHash() {
+	if *address.ProgramHash != *wallet.Keystore.GetProgramHash() {
 		return nil, errors.New("[Wallet], Invalid signer")
 	}
 	// Sign transaction
-	signedTx, err := wallet.KeyStore.Sign(password, txn)
+	signedTx, err := wallet.Keystore.Sign(password, txn)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +264,7 @@ func (wallet *WalletImpl) signMultiSignTransaction(password []byte, address *Add
 	// Check if current user is a valid signer
 	var isSigner bool
 	programHashes := tx.ParseMultiSignTransactionCode(address.RedeemScript)
-	userProgramHash := wallet.KeyStore.GetProgramHash()
+	userProgramHash := wallet.Keystore.GetProgramHash()
 	for _, programHash := range programHashes {
 		if *userProgramHash == *programHash {
 			isSigner = true
@@ -274,7 +274,7 @@ func (wallet *WalletImpl) signMultiSignTransaction(password []byte, address *Add
 		return nil, errors.New("[Wallet], Invalid multi sign signer")
 	}
 	// Sign transaction
-	signedTx, err := wallet.KeyStore.Sign(password, txn)
+	signedTx, err := wallet.Keystore.Sign(password, txn)
 	if err != nil {
 		return nil, err
 	}
