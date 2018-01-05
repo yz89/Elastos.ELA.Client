@@ -86,8 +86,8 @@ type DataStoreImpl struct {
 	*sql.DB
 }
 
-func OpenDataStore(create bool) (DataStore, error) {
-	db, err := initDB(create)
+func OpenDataStore() (DataStore, error) {
+	db, err := initDB()
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func OpenDataStore(create bool) (DataStore, error) {
 	return dataStore, nil
 }
 
-func initDB(create bool) (*sql.DB, error) {
+func initDB() (*sql.DB, error) {
 	db, err := sql.Open(DriverName, DBName)
 	if err != nil {
 		log.Error("Open data db error:", err)
@@ -122,17 +122,12 @@ func initDB(create bool) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if create {
-		// Insert initial height
-		stmt, err := db.Prepare("INSERT INTO Info(Name, Value) values(?,?)")
-		if err != nil {
-			return nil, err
-		}
-		_, err = stmt.Exec("Height", uint32(0))
-		if err != nil {
-			return nil, err
-		}
+	stmt, err := db.Prepare("INSERT INTO Info(Name, Value) values(?,?)")
+	if err != nil {
+		return nil, err
 	}
+	stmt.Exec("Height", uint32(0))
+
 	return db, nil
 }
 
@@ -153,7 +148,7 @@ func (store *DataStoreImpl) ResetDataStore() error {
 	store.DB.Close()
 	os.Remove(DBName)
 
-	store.DB, err = initDB(true)
+	store.DB, err = initDB()
 	if err != nil {
 		return err
 	}
@@ -214,11 +209,31 @@ func (store *DataStoreImpl) DeleteAddress(programHash *Uint160) error {
 	store.Lock()
 	defer store.Unlock()
 
-	stmt, err := store.Prepare("DELETE FROM Addresses WHERE ProgramHash=?")
+	// Find addressId by ProgramHash
+	row := store.QueryRow("SELECT Id FROM Addresses WHERE ProgramHash=?", programHash.ToArray())
+	var addressId int
+	err := row.Scan(&addressId)
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(programHash.ToArray())
+
+	// Delete UTXOs of this address
+	stmt, err := store.Prepare(
+		"DELETE FROM UTXOs WHERE AddressId=?")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(addressId)
+	if err != nil {
+		return err
+	}
+
+	// Delete address from address table
+	stmt, err = store.Prepare("DELETE FROM Addresses WHERE Id=?")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(addressId)
 	if err != nil {
 		return err
 	}

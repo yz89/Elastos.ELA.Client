@@ -165,11 +165,20 @@ func walletAction(context *cli.Context) {
 		return
 	}
 
-	// add multisig account
+	// add account
 	if pubKeysStr := context.String("addaccount"); pubKeysStr != "" {
 		if err := addAccount(wallet, pubKeysStr); err != nil {
-			fmt.Println("error: add multi sign account failed, ", err)
+			fmt.Println("error: add account failed, ", err)
 			cli.ShowCommandHelpAndExit(context, "addaccount", 5)
+		}
+		return
+	}
+
+	// delete account
+	if address := context.String("deleteaccount"); address != "" {
+		if err := deleteAccount(wallet, address); err != nil {
+			fmt.Println("error: delete account failed, ", err)
+			cli.ShowCommandHelpAndExit(context, "deleteaccount", 5)
 		}
 		return
 	}
@@ -249,6 +258,10 @@ func NewCommand() *cli.Command {
 				Name: "addaccount",
 				Usage: "add a standard account with it's public key" +
 					", or add a multi-sign account using signers public keys",
+			},
+			cli.StringFlag{
+				Name:  "deleteaccount",
+				Usage: "delete account from database using it's address",
 			},
 			cli.BoolFlag{
 				Name:  "balance, b",

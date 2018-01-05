@@ -8,6 +8,7 @@
     - 更改密码 --changepassword，如：./ela-cli wallet --changepassword
     - 重置钱包数据库 --reset，如：./ela-cli wallet --reset，已经同步的UTXO将被删除，已经添加的地址不会被删除
     - 增加账户 --addaccount，如：./ela-cli wallet --addaccount [public_key, public_key1,public_key2,...]，通过单个公钥添加标准账户，通过多个公钥添加多签账户
+    - 删除账户 --deleteaccount，如：./ela-cli wallet --deleteaccount address，通过地址删除账户
     - 显示账户余额 [--balance, -b]，如：./ela-cli wallet -b，钱包会显示所有已经添加到钱包中的账户的余额
     - 交易 [--transacion, -t]，交易分为三种类型[create, sign, send]，可用参数：
       1. --from address，指定发起交易的账户地址
@@ -19,10 +20,21 @@
       7. --file file_path，指定一个内容为[address, amount]格式的CSV文件创建多输出交易，或被签名、发送的转账文件
 
 ## 示例：
-创建交易：
+创建标准交易：
 ```
 $ ./ela-cli wallet -t create --from 8JiMvfWKDwEeFNY3KN38PBif19ZhGGF9MH --to EXYPqZpQQk4muDrdXoRNJhCpoQtFBQetYg --amount 10000 --fee 0.00001
 020001001335353737303036373931393437373739343130012f9931a59bd996bf7142eb49546df7f83946e27ab4999a69533949093ace5df305000000000002b037db964a231458d2d6ffd5ea18944c4f90e63d547c5d3b9874df66a4ead0a30010a5d4e800000000000000219dd292acd80d7dd879be266b98183f1bba9adbabb037db964a231458d2d6ffd5ea18944c4f90e63d547c5d3b9874df66a4ead0a3603071d5c7aa0b00000000001227cfba7dc38ff5a5a710b0c29109474c432d358b0000000000
+```
+
+创建多输出交易：
+```
+$ ./ela-cli wallet -t create --from 8JiMvfWKDwEeFNY3KN38PBif19ZhGGF9MH --file addresses.csv --fee 0.00001
+2018/01/05 20:29:52.372532 [Multi output address: EY55SertfPSAiLxgYGQDUdxQW6eDZjbNbX , amount: 10000]
+2018/01/05 20:29:52.372612 [Multi output address: Eeqn3kNwbnAsu1wnHNoSDbD8t8oq58pubN , amount: 10000]
+2018/01/05 20:29:52.372630 [Multi output address: EXWWrRQxG2sH5U8wYD6jHizfGdDUzM4vGt , amount: 10000]
+2018/01/05 20:29:52.372644 [Multi output address: ERjYb2WGUDUvfb2dDpK7Jygy1ZSyDGaAWL , amount: 10000]
+2018/01/05 20:29:52.372662 [Multi output address: ENgeK613q1pPWWMNQL2ebA3G2Dwa92fTEN , amount: 10000]
+020001001335353737303036373931393437373739343130014bd29e49527d7da1fc48684ebdc386efa9219568e1d97600fc6fc14d08a8754464000000000006b037db964a231458d2d6ffd5ea18944c4f90e63d547c5d3b9874df66a4ead0a30010a5d4e80000000000000021a3a01cc2e25b0178010f5d7707930b7e41359d7eb037db964a231458d2d6ffd5ea18944c4f90e63d547c5d3b9874df66a4ead0a30010a5d4e80000000000000021ede51096266b26ca8695c5452d4d209760385c36b037db964a231458d2d6ffd5ea18944c4f90e63d547c5d3b9874df66a4ead0a30010a5d4e800000000000000219d7798bd544db55cd40ed3d5ba55793be4db170ab037db964a231458d2d6ffd5ea18944c4f90e63d547c5d3b9874df66a4ead0a30010a5d4e800000000000000215e1db287d5ebdaa65e1d6418093bb5454dbf390ab037db964a231458d2d6ffd5ea18944c4f90e63d547c5d3b9874df66a4ead0a30010a5d4e800000000000000213ca8d9eddd4895f6156f12c2281f59f94c4a2ac4b037db964a231458d2d6ffd5ea18944c4f90e63d547c5d3b9874df66a4ead0a3484416aab0ab0b00000000001227cfba7dc38ff5a5a710b0c29109474c432d358b0000000000
 ```
 
 签名交易：

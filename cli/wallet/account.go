@@ -82,3 +82,17 @@ func getPublicKeys(content string) ([]*crypto.PublicKey, error) {
 
 	return publicKeys, nil
 }
+
+func deleteAccount(wallet Wallet, address string) error {
+	programHash, err := ToProgramHash(address)
+	if err != nil {
+		return err
+	}
+
+	err = wallet.DeleteAddress(programHash)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
