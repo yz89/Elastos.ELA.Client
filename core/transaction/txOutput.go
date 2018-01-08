@@ -12,7 +12,7 @@ type TxOutput struct {
 	AssetID     Uint256
 	Value       Fixed64
 	OutputLock  uint32
-	ProgramHash Uint160
+	ProgramHash Uint168
 }
 
 func (self TxOutput) String() string {

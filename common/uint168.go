@@ -11,19 +11,17 @@ import (
 	"github.com/itchyny/base58-go"
 )
 
-//This is a magical change of Uint160, with length from 20 to 21.
-//In fact, It is UINT168 now.
-const UINT160SIZE int = 21
+const UINT168SIZE = 21
 
-type Uint160 [UINT160SIZE]uint8
+type Uint168 [UINT168SIZE]uint8
 
-func (self Uint160) String() string {
+func (self Uint168) String() string {
 	return BytesToHexString(self.ToArray())
 }
 
-func (u *Uint160) CompareTo(o *Uint160) int {
-	x := u.ToArray()
-	y := o.ToArray()
+func (self *Uint168) CompareTo(other *Uint168) int {
+	x := self.ToArray()
+	y := other.ToArray()
 
 	for i := len(x) - 1; i >= 0; i-- {
 		if x[i] > y[i] {
@@ -37,24 +35,26 @@ func (u *Uint160) CompareTo(o *Uint160) int {
 	return 0
 }
 
-func (u *Uint160) ToArray() []byte {
-	var x = make([]byte, UINT160SIZE)
-	for i := 0; i < UINT160SIZE; i++ {
-		x[i] = byte(u[i])
+func (self *Uint168) ToArray() []byte {
+	var x = make([]byte, UINT168SIZE)
+	for i := 0; i < UINT168SIZE; i++ {
+		x[i] = byte(self[i])
 	}
 
 	return x
 }
-func (u *Uint160) ToArrayReverse() []byte {
-	var x = make([]byte, UINT160SIZE)
-	for i, j := 0, UINT160SIZE-1; i < j; i, j = i+1, j-1 {
-		x[i], x[j] = byte(u[j]), byte(u[i])
+
+func (self *Uint168) ToArrayReverse() []byte {
+	var x = make([]byte, UINT168SIZE)
+	for i, j := 0, UINT168SIZE-1; i < j; i, j = i+1, j-1 {
+		x[i], x[j] = byte(self[j]), byte(self[i])
 	}
 	return x
 }
-func (u *Uint160) Serialize(w io.Writer) (int, error) {
+
+func (self *Uint168) Serialize(w io.Writer) (int, error) {
 	b_buf := bytes.NewBuffer([]byte{})
-	binary.Write(b_buf, binary.LittleEndian, u)
+	binary.Write(b_buf, binary.LittleEndian, self)
 
 	len, err := w.Write(b_buf.Bytes())
 
@@ -65,8 +65,8 @@ func (u *Uint160) Serialize(w io.Writer) (int, error) {
 	return len, nil
 }
 
-func (f *Uint160) Deserialize(r io.Reader) error {
-	p := make([]byte, UINT160SIZE)
+func (self *Uint168) Deserialize(r io.Reader) error {
+	p := make([]byte, UINT168SIZE)
 	n, err := r.Read(p)
 
 	if n <= 0 || err != nil {
@@ -74,13 +74,13 @@ func (f *Uint160) Deserialize(r io.Reader) error {
 	}
 
 	b_buf := bytes.NewBuffer(p)
-	binary.Read(b_buf, binary.LittleEndian, f)
+	binary.Read(b_buf, binary.LittleEndian, self)
 
 	return nil
 }
 
-func (f *Uint160) ToAddress() (string, error) {
-	data := f.ToArray()
+func (self *Uint168) ToAddress() (string, error) {
+	data := self.ToArray()
 	temp := sha256.Sum256(data)
 	temps := sha256.Sum256(temp[:])
 	data = append(data, temps[0:4]...)
@@ -94,20 +94,20 @@ func (f *Uint160) ToAddress() (string, error) {
 	return string(encoded), nil
 }
 
-func Uint160ParseFromBytes(f []byte) (*Uint160, error) {
-	if len(f) != UINT160SIZE {
+func Uint160ParseFromBytes(f []byte) (*Uint168, error) {
+	if len(f) != UINT168SIZE {
 		return nil, errors.New("[Common]: Uint160ParseFromBytes err, len != 21")
 	}
 
-	var hash = &Uint160{}
-	for i := 0; i < UINT160SIZE; i++ {
+	var hash = &Uint168{}
+	for i := 0; i < UINT168SIZE; i++ {
 		hash[i] = f[i]
 	}
 
 	return hash, nil
 }
 
-func ToProgramHash(address string) (*Uint160, error) {
+func ToProgramHash(address string) (*Uint168, error) {
 	encoding := base58.BitcoinEncoding
 
 	decoded, err := encoding.Decode([]byte(address))

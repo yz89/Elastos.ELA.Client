@@ -30,7 +30,7 @@ type Wallet interface {
 	OpenKeystore(name string, password []byte) error
 	ChangePassword(oldPassword, newPassword []byte) error
 
-	AddAccount(publicKey ...*crypto.PublicKey) (*Uint160, error)
+	AddAccount(publicKey ...*crypto.PublicKey) (*Uint168, error)
 
 	CreateTransaction(fromAddress, toAddress string, amount, fee *Fixed64) (*tx.Transaction, error)
 	CreateLockedTransaction(fromAddress, toAddress string, amount, fee *Fixed64, lockedUntil uint32) (*tx.Transaction, error)
@@ -92,7 +92,7 @@ func (wallet *WalletImpl) OpenKeystore(name string, password []byte) error {
 	return nil
 }
 
-func (wallet *WalletImpl) AddAccount(publicKeys ...*crypto.PublicKey) (*Uint160, error) {
+func (wallet *WalletImpl) AddAccount(publicKeys ...*crypto.PublicKey) (*Uint168, error) {
 	var err error
 	var signType int
 	var addressType int
@@ -313,7 +313,7 @@ func getSystemAssetId() Uint256 {
 				AssetType: 0x00,
 			},
 			Amount:     0 * 100000000,
-			Controller: Uint160{},
+			Controller: Uint168{},
 		},
 		Attributes: []*tx.TxAttribute{},
 		UTXOInputs: []*tx.UTXOTxInput{},

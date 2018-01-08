@@ -17,7 +17,7 @@ const (
 	SignTypeMulti  = 2
 )
 
-func ToScriptHash(code []byte, signType int) (*Uint160, error) {
+func ToScriptHash(code []byte, signType int) (*Uint168, error) {
 	temp := sha256.Sum256(code)
 	md := ripemd160.New()
 	io.WriteString(md, string(temp[:]))

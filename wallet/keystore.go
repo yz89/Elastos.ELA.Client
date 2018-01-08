@@ -24,7 +24,7 @@ type Keystore interface {
 
 	GetPublicKey() *crypto.PublicKey
 	GetRedeemScript() []byte
-	GetProgramHash() *Uint160
+	GetProgramHash() *Uint168
 
 	Sign(password []byte, txn *tx.Transaction) ([]byte, error)
 }
@@ -36,7 +36,7 @@ type KeystoreImpl struct {
 
 	publicKey    *crypto.PublicKey
 	redeemScript []byte
-	programHash  *Uint160
+	programHash  *Uint168
 }
 
 func CreateKeystore(name string, password []byte) (Keystore, error) {
@@ -237,7 +237,7 @@ func (store *KeystoreImpl) GetRedeemScript() []byte {
 	return store.redeemScript
 }
 
-func (store *KeystoreImpl) GetProgramHash() *Uint160 {
+func (store *KeystoreImpl) GetProgramHash() *Uint168 {
 	return store.programHash
 }
 

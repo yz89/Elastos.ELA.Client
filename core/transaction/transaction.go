@@ -294,12 +294,12 @@ func (tx *Transaction) GetSize() int {
 	return buffer.Len()
 }
 
-func (tx *Transaction) GetProgramHashes() ([]*Uint160, error) {
+func (tx *Transaction) GetProgramHashes() ([]*Uint168, error) {
 	if tx == nil {
 		return nil, errors.New("[Transaction],GetProgramHashes transaction is nil.")
 	}
-	hashs := []*Uint160{}
-	uniqHashes := []*Uint160{}
+	hashs := []*Uint168{}
+	uniqHashes := []*Uint168{}
 	// add inputUTXO's transaction
 	referenceWithUTXO_Output := tx.Outputs
 	for _, output := range referenceWithUTXO_Output {
@@ -317,7 +317,7 @@ func (tx *Transaction) GetProgramHashes() ([]*Uint160, error) {
 	}
 
 	//remove dupilicated hashes
-	uniq := make(map[*Uint160]bool)
+	uniq := make(map[*Uint168]bool)
 	for _, v := range hashs {
 		uniq[v] = true
 	}
@@ -360,7 +360,7 @@ func (tx *Transaction) Verify() error {
 	return nil
 }
 
-func ParseMultiSignTransactionCode(code []byte) []*Uint160 {
+func ParseMultiSignTransactionCode(code []byte) []*Uint168 {
 	if len(code) < MinMultiSignCodeLength {
 		fmt.Println("short code in multisig transaction detected")
 		return nil
@@ -377,7 +377,7 @@ func ParseMultiSignTransactionCode(code []byte) []*Uint160 {
 		return nil
 	}
 
-	var programHash []*Uint160
+	var programHash []*Uint168
 	i := 0
 	for i < len(code) {
 		script := make([]byte, PublicKeyScriptLength-1)
@@ -391,7 +391,7 @@ func ParseMultiSignTransactionCode(code []byte) []*Uint160 {
 	return programHash
 }
 
-func (tx *Transaction) ParseTransactionCode() []*Uint160 {
+func (tx *Transaction) ParseTransactionCode() []*Uint168 {
 	// TODO: parse Programs[1:]
 	code := make([]byte, len(tx.Programs[0].Code))
 	copy(code, tx.Programs[0].Code)
@@ -434,7 +434,7 @@ func (tx *Transaction) AppendSignature(sig []byte) error {
 	return nil
 }
 
-type byProgramHashes []*Uint160
+type byProgramHashes []*Uint168
 
 func (a byProgramHashes) Len() int      { return len(a) }
 func (a byProgramHashes) Swap(i, j int) { a[i], a[j] = a[j], a[i] }

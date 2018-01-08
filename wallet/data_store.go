@@ -52,7 +52,7 @@ const (
 type Address struct {
 	Type         int
 	Address      string
-	ProgramHash  *Uint160
+	ProgramHash  *Uint168
 	RedeemScript []byte
 }
 
@@ -67,14 +67,14 @@ type DataStore interface {
 
 	CurrentHeight(height uint32) uint32
 
-	AddAddress(programHash *Uint160, redeemScript []byte, addressType int) error
-	DeleteAddress(programHash *Uint160) error
+	AddAddress(programHash *Uint168, redeemScript []byte, addressType int) error
+	DeleteAddress(programHash *Uint168) error
 	GetAddressByUTXO(input *tx.UTXOTxInput) (*Address, error)
 	GetAddresses() ([]*Address, error)
 
-	AddAddressUTXO(programHash *Uint160, utxo *AddressUTXO) error
+	AddAddressUTXO(programHash *Uint168, utxo *AddressUTXO) error
 	DeleteUTXO(input *tx.UTXOTxInput) error
-	GetAddressUTXOs(programHash *Uint160) ([]*AddressUTXO, error)
+	GetAddressUTXOs(programHash *Uint168) ([]*AddressUTXO, error)
 
 	ResetDataStore() error
 }
@@ -190,7 +190,7 @@ func (store *DataStoreImpl) CurrentHeight(height uint32) uint32 {
 	return storedHeight
 }
 
-func (store *DataStoreImpl) AddAddress(programHash *Uint160, redeemScript []byte, addressType int) error {
+func (store *DataStoreImpl) AddAddress(programHash *Uint168, redeemScript []byte, addressType int) error {
 	store.Lock()
 	defer store.Unlock()
 
@@ -205,7 +205,7 @@ func (store *DataStoreImpl) AddAddress(programHash *Uint160, redeemScript []byte
 	return nil
 }
 
-func (store *DataStoreImpl) DeleteAddress(programHash *Uint160) error {
+func (store *DataStoreImpl) DeleteAddress(programHash *Uint168) error {
 	store.Lock()
 	defer store.Unlock()
 
@@ -304,7 +304,7 @@ func (store *DataStoreImpl) GetAddresses() ([]*Address, error) {
 	return addresses, nil
 }
 
-func (store *DataStoreImpl) AddAddressUTXO(programHash *Uint160, utxo *AddressUTXO) error {
+func (store *DataStoreImpl) AddAddressUTXO(programHash *Uint168, utxo *AddressUTXO) error {
 	store.Lock()
 	defer store.Unlock()
 
@@ -357,7 +357,7 @@ func (store *DataStoreImpl) DeleteUTXO(input *tx.UTXOTxInput) error {
 	return nil
 }
 
-func (store *DataStoreImpl) GetAddressUTXOs(programHash *Uint160) ([]*AddressUTXO, error) {
+func (store *DataStoreImpl) GetAddressUTXOs(programHash *Uint168) ([]*AddressUTXO, error) {
 	store.Lock()
 	defer store.Unlock()
 
