@@ -77,9 +77,8 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 			return errors.New("create transaction failed: " + err.Error())
 		}
 	}
-	buf := new(bytes.Buffer)
-	txn.Serialize(buf)
-	fmt.Println(BytesToHexString(buf.Bytes()))
+
+	output(0, 0, txn)
 
 	return nil
 }
@@ -127,9 +126,8 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 			return errors.New("create multi output transaction failed: " + err.Error())
 		}
 	}
-	buf := new(bytes.Buffer)
-	txn.Serialize(buf)
-	fmt.Println(BytesToHexString(buf.Bytes()))
+
+	output(0, 0, txn)
 
 	return nil
 }
@@ -152,22 +150,20 @@ func signTransaction(password []byte, context *cli.Context, wallet walt.Wallet) 
 		return errors.New("deserialize transaction failed")
 	}
 
-	haveSign, needSign, err := txn.ParseTransactionSig()
+	_, needSign, err := txn.ParseTransactionSig()
 	if needSign == 0 {
 		return errors.New("transaction was fully signed, no need more sign")
 	}
 
-	transaction, err := wallet.Sign(getPassword(password, false), &txn)
+	_, err = wallet.Sign(getPassword(password, false), &txn)
 	if err != nil {
 		return err
 	}
 
-	haveSign, needSign, err = transaction.ParseTransactionSig()
-	fmt.Println("[", haveSign, "/", haveSign+needSign, "] Sign transaction successful")
+	haveSign, needSign, _ := txn.ParseTransactionSig()
+	fmt.Println("[", haveSign, "/", haveSign+needSign, "] Transaction successfully signed")
 
-	buf := new(bytes.Buffer)
-	transaction.Serialize(buf)
-	fmt.Println(BytesToHexString(buf.Bytes()))
+	output(haveSign, needSign, &txn)
 
 	return nil
 }
@@ -228,4 +224,39 @@ func getTransactionContent(context *cli.Context) (string, error) {
 	}
 
 	return content, nil
+}
+
+func output(haveSign, needSign int, txn *tx.Transaction) error {
+
+	// Serialise transaction content
+	buf := new(bytes.Buffer)
+	txn.Serialize(buf)
+	content := BytesToHexString(buf.Bytes())
+
+	// Output to console
+	fmt.Println(content)
+
+	// Output to file
+	fileName := "to_be_signed" // Create transaction file name
+
+	if haveSign == 0 && needSign == 0 {
+		//	Transaction created do nothing
+	} else if haveSign+needSign > haveSign {
+		fileName = fmt.Sprint(fileName, "_", haveSign, "_of_", haveSign+needSign)
+	} else if haveSign+needSign == haveSign {
+		fileName = "ready_to_send"
+	}
+	fileName = fileName + ".txn"
+
+	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	if err != nil {
+		return err
+	}
+
+	_, err = file.Write([]byte(content))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

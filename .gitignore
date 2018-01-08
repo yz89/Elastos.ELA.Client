@@ -19,3 +19,4 @@ cscope*
 deps/
 *.dat
 *.db
+*.txn

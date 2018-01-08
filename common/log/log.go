@@ -19,16 +19,11 @@ const (
 	GREEN = "0;32"
 )
 
-var LogToFile = true
-
 var logger *log.Logger
 
 func InitLog() {
-	if !config.Config().Debug {
-		return
-	}
-	writers := make([]io.Writer, 1)
-	if LogToFile {
+	writers := []io.Writer{}
+	if config.Config().LogToFile {
 		logFile, err := OpenLogFile()
 		if err != nil {
 			fmt.Println("error: open log file failed")

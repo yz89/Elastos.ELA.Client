@@ -14,7 +14,7 @@ const (
 var config *Configuration // The single instance of config
 
 type Configuration struct {
-	Debug        bool   `json:Debug`
+	LogToFile    bool   `json:LogToFile`
 	IpAddress    string `json:IpAddress`
 	HttpJsonPort int    `json:"HttpJsonPort"`
 }

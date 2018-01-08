@@ -15,7 +15,6 @@ import (
 var Version string
 
 func init() {
-	log.LogToFile = true
 	log.InitLog()
 }
 
