@@ -5,3 +5,7 @@ BUILD_ELA_CLI = -ldflags "-X main.Version=$(VERSION)"
 
 all:
 	$(BUILD)  $(BUILD_ELA_CLI) ela-cli.go
+
+install:
+	chmod 777 install.sh
+	./install.sh

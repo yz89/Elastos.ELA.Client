@@ -1,5 +1,17 @@
 # ELAClient 节点控制及钱包客户端
 
+## 安装
+1. git clone http://git.elastos.org/elatest/ELAClient.git
+2. cd ELAClient
+3. make install
+4. make
+
+## 配置
+项目目录下的cli-config.json文件。
+配置文件不是必须的，没有配置文件时默认配置：LogToFile=false；IpAddress="localhost"；HttpJsonPort=20336。
+当程序运行目录下有cli-config.json配置文件时，ela-cli程序将读取配置文件。
+配置文件中的IpAddress和HttpJsonPort需正确配置，以连接到节点的JsonRPC端口。
+
 ## 功能列表
 1. Wallet 钱包
     - 创建钱包 [--create, -c]，如：./ela-cli wallet -c
