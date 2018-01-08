@@ -54,7 +54,7 @@ func Create(password []byte) (Wallet, error) {
 		return nil, err
 	}
 
-	dataStore, err := OpenDataStore(true)
+	dataStore, err := OpenDataStore()
 	if err != nil {
 		log.Error("Wallet create data store failed:", err)
 		return nil, err
@@ -71,7 +71,7 @@ func Create(password []byte) (Wallet, error) {
 
 func Open() (Wallet, error) {
 	if wallet == nil {
-		dataStore, err := OpenDataStore(false)
+		dataStore, err := OpenDataStore()
 		if err != nil {
 			return nil, err
 		}

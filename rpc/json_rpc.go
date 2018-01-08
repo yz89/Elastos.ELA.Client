@@ -14,7 +14,7 @@ import (
 var rpcAddress = getRPCAddress()
 
 func getRPCAddress() string {
-	return "http://" + config.Config.IpAddress + ":" + strconv.Itoa(config.Config.HttpJsonPort)
+	return "http://" + config.Config().IpAddress + ":" + strconv.Itoa(config.Config().HttpJsonPort)
 }
 
 func GetBlockCount() (uint32, error) {

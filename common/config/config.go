@@ -1,18 +1,17 @@
 package config
 
 import (
-	"os"
-	"log"
 	"bytes"
 	"io/ioutil"
 	"encoding/json"
+	"fmt"
 )
 
 const (
-	CONFIG_FILENAME = "./cli-config.json"
+	ConfigFilename = "./cli-config.json"
 )
 
-var Config *Configuration
+var config *Configuration // The single instance of config
 
 type Configuration struct {
 	Debug        bool   `json:Debug`
@@ -20,19 +19,32 @@ type Configuration struct {
 	HttpJsonPort int    `json:"HttpJsonPort"`
 }
 
-func init() {
-	data, e := ioutil.ReadFile(CONFIG_FILENAME)
-	if e != nil {
-		log.Fatal("File error: %v\n", e)
-		os.Exit(1)
+func (config *Configuration) readConfigFile() error {
+	data, err := ioutil.ReadFile(ConfigFilename)
+	if err != nil {
+		return err
 	}
 	// Remove the UTF-8 Byte Order Mark
 	data = bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))
 
-	Config = new(Configuration)
-	e = json.Unmarshal(data, Config)
-	if e != nil {
-		log.Fatal("Unmarshal json file erro %v", e)
-		os.Exit(1)
+	err = json.Unmarshal(data, config)
+	if err != nil {
+		return err
 	}
+	return nil
+}
+
+func Config() *Configuration {
+	if config == nil {
+		config = &Configuration{
+			false,
+			"localhost",
+			20336,
+		}
+		err := config.readConfigFile()
+		if err != nil {
+			fmt.Println("Read config file error:", err)
+		}
+	}
+	return config
 }
