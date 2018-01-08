@@ -11,14 +11,15 @@ import (
 )
 
 const (
-	WalletFilename   = "wallet.dat"
-	KeystoreFilename = "keystore.dat"
+	OldWalletFile       = "wallet.dat"
+	DefaultKeystoreFile = "keystore.dat"
 )
 
 type KeystoreFile struct {
 	sync.Mutex
 
-	Version string
+	fileName string
+	Version  string
 
 	IV                  string
 	PasswordHash        string
@@ -26,22 +27,25 @@ type KeystoreFile struct {
 	PrivateKeyEncrypted string
 }
 
-func CreateKeystoreFile() (*KeystoreFile, error) {
+func CreateKeystoreFile(name string) (*KeystoreFile, error) {
 
-	if FileExisted(KeystoreFilename) {
+	if FileExisted(name) {
 		return nil, errors.New("key store file already exist")
 	}
 
 	file := &KeystoreFile{
-		Version: KeystoreVersion,
+		fileName: name,
+		Version:  KeystoreVersion,
 	}
 
 	return file, nil
 }
 
-func OpenKeystoreFile() (*KeystoreFile, error) {
+func OpenKeystoreFile(name string) (*KeystoreFile, error) {
 
-	file := &KeystoreFile{}
+	file := &KeystoreFile{
+		fileName: name,
+	}
 
 	err := file.LoadFromFile()
 	if err != nil {
@@ -57,11 +61,11 @@ func OpenKeystoreFile() (*KeystoreFile, error) {
 }
 
 func OpenFromOldVersion() (*KeystoreFile, error) {
-	if _, err := os.Stat(WalletFilename); err != nil {
+	if _, err := os.Stat(OldWalletFile); err != nil {
 		return nil, errors.New("wallet file not exist")
 	}
 
-	file, err := os.OpenFile(WalletFilename, os.O_RDONLY, 0666)
+	file, err := os.OpenFile(OldWalletFile, os.O_RDONLY, 0666)
 	if err != nil {
 		return nil, err
 	}
@@ -165,11 +169,11 @@ func (store *KeystoreFile) LoadFromFile() error {
 	store.Lock()
 	defer store.Unlock()
 
-	if _, err := os.Stat(KeystoreFilename); err != nil {
+	if _, err := os.Stat(store.fileName); err != nil {
 		return errors.New("keystore file not exist")
 	}
 
-	file, err := os.OpenFile(KeystoreFilename, os.O_RDONLY, 0666)
+	file, err := os.OpenFile(store.fileName, os.O_RDONLY, 0666)
 	if err != nil {
 		return err
 	}
@@ -191,7 +195,7 @@ func (store *KeystoreFile) SaveToFile() error {
 	store.Lock()
 	defer store.Unlock()
 
-	file, err := os.OpenFile(KeystoreFilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	file, err := os.OpenFile(store.fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
 		return err
 	}

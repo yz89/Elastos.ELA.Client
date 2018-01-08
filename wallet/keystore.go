@@ -16,7 +16,7 @@ import (
 秘钥数据库，存储IV，MasterKey，PasswordHash地址公钥私钥，使用JsonFile存储
 */
 const (
-	KeystoreVersion = "1.0"
+	KeystoreVersion  = "1.0"
 )
 
 type Keystore interface {
@@ -39,9 +39,9 @@ type KeystoreImpl struct {
 	programHash  *Uint160
 }
 
-func CreateKeystore(password []byte) (Keystore, error) {
+func CreateKeystore(name string, password []byte) (Keystore, error) {
 
-	keystoreFile, err := CreateKeystoreFile()
+	keystoreFile, err := CreateKeystoreFile(name)
 	if err != nil {
 		return nil, err
 	}
@@ -102,9 +102,9 @@ func CreateKeystore(password []byte) (Keystore, error) {
 	return keystore, nil
 }
 
-func OpenKeystore(password []byte) (Keystore, error) {
+func OpenKeystore(name string, password []byte) (Keystore, error) {
 
-	keystoreFile, err := OpenKeystoreFile()
+	keystoreFile, err := OpenKeystoreFile(name)
 	if err != nil {
 		return nil, err
 	}

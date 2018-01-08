@@ -16,6 +16,7 @@
 1. Wallet 钱包
     - 创建钱包 [--create, -c]，如：./ela-cli wallet -c
     - 钱包密码 [--password, -p]，如：./ela-cli wallet -c -p elatest，新建一个密码为elatest的钱包
+    - 钱包名称 [--name, -n]，如：./ela-cli wallet -n my_wallet_name.dat -p elatest -c，新建一个文件名为my_wallet_name.dat，密码为elatest的钱包；注意，当使用多个参数时，-c必须放在最后。
     - 显示账户信息 [--account, -a]，如：./ela-cli wallet -a
     - 更改密码 --changepassword，如：./ela-cli wallet --changepassword
     - 重置钱包数据库 --reset，如：./ela-cli wallet --reset，已经同步的UTXO将被删除，已经添加的地址不会被删除

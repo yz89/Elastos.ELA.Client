@@ -24,20 +24,22 @@ func printLine() {
 	fmt.Println()
 }
 
-func createWallet(password []byte) error {
+func createWallet(name string, password []byte) error {
+
+	password = getPassword(password, true)
 	defer ClearBytes(password, len(password))
 
-	_, err := wallet.Create(getPassword(password, true))
+	_, err := wallet.Create(name, password)
 	if err != nil {
 		return err
 	}
-	return showAccountInfo(password)
+	return showAccountInfo(name, password)
 }
 
-func changePassword(password []byte, wallet wallet.Wallet) error {
+func changePassword(name string, password []byte, wallet wallet.Wallet) error {
 	// Verify old password
 	oldPassword := getPassword(password, false)
-	err := wallet.VerifyPassword(oldPassword)
+	err := wallet.OpenKeystore(name, oldPassword)
 	if err != nil {
 		return err
 	}
@@ -56,11 +58,11 @@ func changePassword(password []byte, wallet wallet.Wallet) error {
 	return nil
 }
 
-func showAccountInfo(password []byte) error {
+func showAccountInfo(name string, password []byte) error {
 	password = getPassword(password, false)
 	defer ClearBytes(password, len(password))
 
-	keyStore, err := wallet.OpenKeystore(password)
+	keyStore, err := wallet.OpenKeystore(name, password)
 	if err != nil {
 		return err
 	}
@@ -129,11 +131,12 @@ func walletAction(context *cli.Context) {
 		cli.ShowSubcommandHelp(context)
 		os.Exit(0)
 	}
+	name := context.String("name")
 	pass := context.String("password")
 
 	// create wallet
 	if context.Bool("create") {
-		if err := createWallet([]byte(pass)); err != nil {
+		if err := createWallet(name, []byte(pass)); err != nil {
 			fmt.Println("error: create wallet failed, ", err)
 			cli.ShowCommandHelpAndExit(context, "create", 1)
 		}
@@ -148,7 +151,7 @@ func walletAction(context *cli.Context) {
 
 	// show account info
 	if context.Bool("account") {
-		if err := showAccountInfo([]byte(pass)); err != nil {
+		if err := showAccountInfo(name, []byte(pass)); err != nil {
 			fmt.Println("error: show account info failed, ", err)
 			cli.ShowCommandHelpAndExit(context, "account", 3)
 		}
@@ -157,7 +160,7 @@ func walletAction(context *cli.Context) {
 
 	// change password
 	if context.Bool("changepassword") {
-		if err := changePassword([]byte(pass), wallet); err != nil {
+		if err := changePassword(name, []byte(pass), wallet); err != nil {
 			fmt.Println("error: change password failed, ", err)
 			cli.ShowCommandHelpAndExit(context, "changepassword", 4)
 		}
@@ -200,7 +203,7 @@ func walletAction(context *cli.Context) {
 				os.Exit(701)
 			}
 		case "sign":
-			if err := signTransaction([]byte(pass), context, wallet); err != nil {
+			if err := signTransaction(name, []byte(pass), context, wallet); err != nil {
 				fmt.Println("error:", err)
 				os.Exit(702)
 			}
@@ -236,6 +239,11 @@ func NewCommand() *cli.Command {
 			cli.StringFlag{
 				Name:  "password, p",
 				Usage: "keystore password",
+			},
+			cli.StringFlag{
+				Name:  "name, n",
+				Usage: "to specify the created keystore file name or the keystore file path to open",
+				Value: wallet.DefaultKeystoreFile,
 			},
 			cli.BoolFlag{
 				Name:  "create, c",

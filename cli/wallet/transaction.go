@@ -132,7 +132,7 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 	return nil
 }
 
-func signTransaction(password []byte, context *cli.Context, wallet walt.Wallet) error {
+func signTransaction(name string, password []byte, context *cli.Context, wallet walt.Wallet) error {
 	defer ClearBytes(password, len(password))
 
 	content, err := getTransactionContent(context)
@@ -155,7 +155,7 @@ func signTransaction(password []byte, context *cli.Context, wallet walt.Wallet) 
 		return errors.New("transaction was fully signed, no need more sign")
 	}
 
-	_, err = wallet.Sign(getPassword(password, false), &txn)
+	_, err = wallet.Sign(name, getPassword(password, false), &txn)
 	if err != nil {
 		return err
 	}

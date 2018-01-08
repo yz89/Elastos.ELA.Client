@@ -23,22 +23,15 @@ func addAccount(wallet Wallet, content string) error {
 		return errors.New(fmt.Sprint("multi sign account require at lest ", MinMultiSignKeys, " public keys"))
 	}
 
-	programHash, err := wallet.AddAccount(publicKeys...)
+	_, err = wallet.AddAccount(publicKeys...)
 	if err != nil {
 		return err
 	}
-
-	address, err := programHash.ToAddress()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(address)
 
 	// When add a new address, reset stored height to trigger synchronize blocks.
 	wallet.CurrentHeight(ResetHeightCode)
 
-	return nil
+	return listBalanceInfo(wallet)
 }
 
 func getPublicKeys(content string) ([]*crypto.PublicKey, error) {
@@ -94,5 +87,5 @@ func deleteAccount(wallet Wallet, address string) error {
 		return err
 	}
 
-	return nil
+	return listBalanceInfo(wallet)
 }

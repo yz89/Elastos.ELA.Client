@@ -27,7 +27,7 @@ var wallet Wallet // Single instance of wallet
 type Wallet interface {
 	DataStore
 
-	VerifyPassword(password []byte) error
+	OpenKeystore(name string, password []byte) error
 	ChangePassword(oldPassword, newPassword []byte) error
 
 	AddAccount(publicKey ...*crypto.PublicKey) (*Uint160, error)
@@ -37,7 +37,7 @@ type Wallet interface {
 	CreateMultiOutputTransaction(fromAddress string, fee *Fixed64, output ...*Output) (*tx.Transaction, error)
 	CreateLockedMultiOutputTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, output ...*Output) (*tx.Transaction, error)
 
-	Sign(password []byte, transaction *tx.Transaction) (*tx.Transaction, error)
+	Sign(name string, password []byte, transaction *tx.Transaction) (*tx.Transaction, error)
 
 	Reset() error
 }
@@ -47,8 +47,8 @@ type WalletImpl struct {
 	Keystore
 }
 
-func Create(password []byte) (Wallet, error) {
-	keyStore, err := CreateKeystore(password)
+func Create(name string, password []byte) (Wallet, error) {
+	keyStore, err := CreateKeystore(name, password)
 	if err != nil {
 		log.Error("Wallet create key store failed:", err)
 		return nil, err
@@ -83,8 +83,8 @@ func Open() (Wallet, error) {
 	return wallet, nil
 }
 
-func (wallet *WalletImpl) VerifyPassword(password []byte) error {
-	keyStore, err := OpenKeystore(password)
+func (wallet *WalletImpl) OpenKeystore(name string, password []byte) error {
+	keyStore, err := OpenKeystore(name, password)
 	if err != nil {
 		return err
 	}
@@ -208,9 +208,9 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 	return wallet.newTransaction(txInputs, txOutputs), nil
 }
 
-func (wallet *WalletImpl) Sign(password []byte, txn *tx.Transaction) (*tx.Transaction, error) {
+func (wallet *WalletImpl) Sign(name string, password []byte, txn *tx.Transaction) (*tx.Transaction, error) {
 	// Verify password
-	err := wallet.VerifyPassword(password)
+	err := wallet.OpenKeystore(name, password)
 	if err != nil {
 		return nil, err
 	}
