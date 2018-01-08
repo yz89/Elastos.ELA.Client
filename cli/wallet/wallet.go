@@ -8,7 +8,6 @@ import (
 	"ELAClient/wallet"
 	. "ELAClient/common"
 	"ELAClient/common/log"
-	. "ELAClient/cli/common"
 	"ELAClient/common/password"
 
 	"github.com/urfave/cli"
@@ -308,8 +307,7 @@ func NewCommand() *cli.Command {
 		},
 		Action: walletAction,
 		OnUsageError: func(c *cli.Context, err error, subCommand bool) error {
-			PrintError(c, err, "wallet")
-			return cli.NewExitError("", 1)
+			return cli.NewExitError(err, 1)
 		},
 	}
 }

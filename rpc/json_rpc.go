@@ -30,10 +30,10 @@ func GetBlockByHeight(height uint32) (*BlockInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	block := BlockInfo{}
-	unmarshal(&resp, &block)
+	block := &BlockInfo{}
+	unmarshal(&resp, block)
 
-	return &block, nil
+	return block, nil
 }
 
 func Call(method string, params ...interface{}) ([]byte, error) {

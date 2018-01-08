@@ -1,15 +1,15 @@
 package mining
 
 import (
-	. "ELAClient/cli/common"
 	"ELAClient/rpc"
 	"errors"
 
 	"github.com/urfave/cli"
 	"strconv"
+	"fmt"
 )
 
-func miningAction(c *cli.Context) (err error) {
+func miningAction(c *cli.Context) error {
 	if c.NumFlags() == 0 {
 		cli.ShowSubcommandHelp(c)
 		return nil
@@ -24,8 +24,12 @@ func miningAction(c *cli.Context) (err error) {
 		} else {
 			return errors.New("toggle argument must be [start, stop]")
 		}
-		resp, _ := rpc.Call("togglecpumining", isMining)
-		FormatOutput(resp)
+		result, err := rpc.CallAndUnmarshal("togglecpumining", isMining)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(result)
 		return nil
 	}
 
@@ -34,8 +38,12 @@ func miningAction(c *cli.Context) (err error) {
 		if err != nil || number < 1 {
 			return errors.New("[number] must be a positive integer")
 		}
-		resp, _ := rpc.Call("discretemining", number)
-		FormatOutput(resp)
+		result, err := rpc.CallAndUnmarshal("discretemining", number)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(result)
 		return nil
 	}
 
@@ -60,8 +68,7 @@ func NewCommand() *cli.Command {
 		},
 		Action: miningAction,
 		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
-			PrintError(c, err, "mining")
-			return cli.NewExitError("", 1)
+			return cli.NewExitError(err, 1)
 		},
 	}
 }

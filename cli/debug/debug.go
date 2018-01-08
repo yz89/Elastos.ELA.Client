@@ -2,36 +2,35 @@ package debug
 
 import (
 	"fmt"
-	"os"
-
-	. "ELAClient/cli/common"
 	"ELAClient/rpc"
 
 	"github.com/urfave/cli"
 )
 
-func debugAction(c *cli.Context) (err error) {
+func debugAction(c *cli.Context) error {
 	if c.NumFlags() == 0 {
 		cli.ShowSubcommandHelp(c)
 		return nil
 	}
-	level := c.Int("level")
-	if level != -1 {
-		resp, err := rpc.Call("setdebuginfo", level)
+
+	if level := c.Int("level"); level != -1 {
+		result, err := rpc.CallAndUnmarshal("setdebuginfo", level)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Println("error: set debug info failed, ", err)
 			return err
 		}
-		FormatOutput(resp)
+		fmt.Println(result)
+		return nil
 	}
+
 	return nil
 }
 
 func NewCommand() *cli.Command {
 	return &cli.Command{Name: "debug",
-		Usage:       "blockchain node debugging",
+		Usage: "blockchain node debugging",
 		Description: "With ela-cli debug, you could debug blockchain node.",
-		ArgsUsage:   "[args]",
+		ArgsUsage: "[args]",
 		Flags: []cli.Flag{
 			cli.IntFlag{
 				Name:  "level, l",
@@ -40,9 +39,8 @@ func NewCommand() *cli.Command {
 			},
 		},
 		Action: debugAction,
-		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
-			PrintError(c, err, "debug")
-			return cli.NewExitError("", 1)
+		OnUsageError: func(c *cli.Context, err error, isSubCommand bool) error {
+			return cli.NewExitError(err, 1)
 		},
 	}
 }

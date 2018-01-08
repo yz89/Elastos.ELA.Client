@@ -2,114 +2,103 @@ package info
 
 import (
 	"fmt"
-	"os"
+	"strconv"
 
-	. "ELAClient/cli/common"
 	"ELAClient/rpc"
-
 	"github.com/urfave/cli"
 )
 
-func infoAction(c *cli.Context) (err error) {
+func infoAction(c *cli.Context) error {
 	if c.NumFlags() == 0 {
 		cli.ShowSubcommandHelp(c)
 		return nil
 	}
-	blockhash := c.String("blockhash")
-	txhash := c.String("txhash")
-	bestblockhash := c.Bool("bestblockhash")
-	height := c.Int("height")
-	blockcount := c.Bool("blockcount")
-	connections := c.Bool("connections")
-	neighbor := c.Bool("neighbor")
-	state := c.Bool("state")
-	version := c.Bool("nodeversion")
 
-	var resp []byte
-	var output [][]byte
-	if height != -1 {
-		resp, err = rpc.Call("getblock", height)
+	if c.Bool("blockcount") {
+		result, err := rpc.CallAndUnmarshal("getblockcount")
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Println("error: get block count failed, ", err)
 			return err
 		}
-		output = append(output, resp)
+		fmt.Println(result)
+		return nil
 	}
 
-	if c.String("blockhash") != "" {
-		resp, err = rpc.Call("getblock", blockhash)
+	if param := c.String("getblock"); param != "" {
+		height, err := strconv.ParseInt(param, 10, 64)
+
+		var result interface{}
+		if err == nil {
+			result, err = rpc.CallAndUnmarshal("getblock", height)
+		} else {
+			result, err = rpc.CallAndUnmarshal("getblock", param)
+		}
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Println("error: get block failed, ", err)
 			return err
 		}
-		output = append(output, resp)
+		fmt.Println(result)
+		return nil
 	}
 
-	if bestblockhash {
-		resp, err = rpc.Call("getbestblockhash", )
+	if param := c.String("gettransaction"); param != "" {
+		result, err := rpc.CallAndUnmarshal("getrawtransaction", param)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Println("error: get transaction failed, ", err)
 			return err
 		}
-		output = append(output, resp)
+		fmt.Println(result)
+		return nil
 	}
 
-	if blockcount {
-		resp, err = rpc.Call("getblockcount", )
+	if c.Bool("bestblockhash") {
+		result, err := rpc.CallAndUnmarshal("getbestblockhash", )
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Println("error: get last block hash failed, ", err)
 			return err
 		}
-		output = append(output, resp)
+		fmt.Println(result)
+		return nil
 	}
 
-	if connections {
-		resp, err = rpc.Call("getconnectioncount", )
+	if c.Bool("connections") {
+		result, err := rpc.CallAndUnmarshal("getconnectioncount", )
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Println("error: get node connections failed, ", err)
 			return err
 		}
-		output = append(output, resp)
+		fmt.Println(result)
+		return nil
 	}
 
-	if neighbor {
-		resp, err := rpc.Call("getneighbor", )
+	if c.Bool("neighbor") {
+		result, err := rpc.CallAndUnmarshal("getneighbor", )
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Println("error: get node neighbors info failed, ", err)
 			return err
 		}
-		output = append(output, resp)
+		fmt.Println(result)
+		return nil
 	}
 
-	if state {
-		resp, err := rpc.Call("getnodestate", )
+	if c.Bool("state") {
+		result, err := rpc.CallAndUnmarshal("getnodestate", )
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Println("error: get node state info failed, ", err)
 			return err
 		}
-		output = append(output, resp)
+		fmt.Println(result)
+		return nil
 	}
 
-	if txhash != "" {
-		resp, err = rpc.Call("getrawtransaction", txhash)
+	if c.Bool("version") {
+		result, err := rpc.CallAndUnmarshal("getversion", )
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Println("error: get node version failed, ", err)
 			return err
 		}
-		output = append(output, resp)
-	}
-
-	if version {
-		resp, err = rpc.Call("getversion", )
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return err
-		}
-		output = append(output, resp)
-
-	}
-	for _, v := range output {
-		FormatOutput(v)
+		fmt.Println(result)
+		return nil
 	}
 
 	return nil
@@ -122,48 +111,42 @@ func NewCommand() *cli.Command {
 		Description: "With ela-cli info, you could look up blocks, transactions, etc.",
 		ArgsUsage:   "[args]",
 		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:  "blockhash, b",
-				Usage: "hash for querying a block",
+			cli.BoolFlag{
+				Name:  "blockcount, bc",
+				Usage: "current blocks in the blockchain",
 			},
 			cli.StringFlag{
-				Name:  "txhash, t",
-				Usage: "hash for querying a transaction",
+				Name:  "getblock, gb",
+				Usage: "query a block with height or it's hash",
+			},
+			cli.StringFlag{
+				Name:  "gettransaction, gt",
+				Usage: "query a transaction with it's hash",
 			},
 			cli.BoolFlag{
 				Name:  "bestblockhash",
-				Usage: "latest block hash",
-			},
-			cli.IntFlag{
-				Name:  "height",
-				Usage: "block height for querying a block",
-				Value: -1,
+				Usage: "get the latest block's hash",
 			},
 			cli.BoolFlag{
-				Name:  "blockcount, c",
-				Usage: "block number in blockchain",
+				Name:  "connections, cs",
+				Usage: "how many connections are holding by the connected node",
 			},
 			cli.BoolFlag{
-				Name:  "connections",
-				Usage: "connection count",
-			},
-			cli.BoolFlag{
-				Name:  "neighbor",
-				Usage: "neighbor information of current node",
+				Name:  "neighbor, nb",
+				Usage: "neighbor information of the connected node",
 			},
 			cli.BoolFlag{
 				Name:  "state, s",
-				Usage: "current node state",
+				Usage: "the connected node's state",
 			},
 			cli.BoolFlag{
-				Name:  "nodeversion, v",
-				Usage: "version of connected remote node",
+				Name:  "version, v",
+				Usage: "version of the connected node",
 			},
 		},
 		Action: infoAction,
 		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
-			PrintError(c, err, "info")
-			return cli.NewExitError("", 1)
+			return cli.NewExitError(err, 1)
 		},
 	}
 }
