@@ -83,5 +83,14 @@ Balance:      32839999.99996000
   - 手动挖矿 [--mine, -m] number，如：./ela-cli mining -m 100，产生100个区块
 
 3. info 查询信息
+  - 当前区块链上有多少区块 [--blockcount, --bc]，如：./ela-cli info --bc
+  - 获取区块 [--getblock, --gb]，如：./ela-cli info --gb 100 或 ./ela-cli info --gb 92a257278a75864da0bd45171b190031719586a3984ba3363bb2575a1f620762
+  - 获取交易 [--gettransacion, --gt]，如：./ela-cli info --gt 702ddbf789fc060bb844f018d0b0e107e6c67b4da1ca09c4e70cc40c19d0fccc
+  - 获取最新区块的Hash --bestblockhash，如：./ela-cli info --bestblockhash
+  - 获取节点连接数 [--connections, --cs]，如：./ela-cli info --cs
+  - 获取邻居节点信息 [--neighbor, --nb]，如：./ela-cli info --nb
+  - 获取节点状态信息 [--state, -s]，如：./ela-cli info -s
+  - 获取节点版本 [--version, -v]，如：./ela-cli info -v
 
 4. debug 设置日志输出级别[0~6]，0输出所有日志，6只输出错误日志
+  - 设置日志输出级别 [--level, -l] number，如：./ela-cli debug -l 0，设置输出所有日志信息
