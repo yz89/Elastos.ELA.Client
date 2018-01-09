@@ -14,6 +14,46 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
+	if c.Bool("version") {
+		result, err := rpc.CallAndUnmarshal("getversion")
+		if err != nil {
+			fmt.Println("error: get node version failed, ", err)
+			return err
+		}
+		fmt.Println(result)
+		return nil
+	}
+
+	if c.Bool("connections") {
+		result, err := rpc.CallAndUnmarshal("getconnectioncount")
+		if err != nil {
+			fmt.Println("error: get node connections failed, ", err)
+			return err
+		}
+		fmt.Println(result)
+		return nil
+	}
+
+	if c.Bool("neighbor") {
+		result, err := rpc.CallAndUnmarshal("getneighbor")
+		if err != nil {
+			fmt.Println("error: get node neighbors info failed, ", err)
+			return err
+		}
+		fmt.Println(result)
+		return nil
+	}
+
+	if c.Bool("state") {
+		result, err := rpc.CallAndUnmarshal("getnodestate")
+		if err != nil {
+			fmt.Println("error: get node state info failed, ", err)
+			return err
+		}
+		fmt.Println(result)
+		return nil
+	}
+
 	if c.Bool("blockcount") {
 		result, err := rpc.CallAndUnmarshal("getblockcount")
 		if err != nil {
@@ -21,6 +61,16 @@ func infoAction(c *cli.Context) error {
 			return err
 		}
 		fmt.Println(result)
+		return nil
+	}
+
+	if height := c.Uint("getblockhash"); height >= 0 {
+		result, err := rpc.CallAndUnmarshal("getblockhash", height)
+		if err != nil {
+			fmt.Println("error: get block hash failed, ", err)
+			return err
+		}
+		fmt.Println(result.(string))
 		return nil
 	}
 
@@ -52,7 +102,7 @@ func infoAction(c *cli.Context) error {
 	}
 
 	if c.Bool("bestblockhash") {
-		result, err := rpc.CallAndUnmarshal("getbestblockhash", )
+		result, err := rpc.CallAndUnmarshal("getbestblockhash")
 		if err != nil {
 			fmt.Println("error: get last block hash failed, ", err)
 			return err
@@ -61,40 +111,11 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	if c.Bool("connections") {
-		result, err := rpc.CallAndUnmarshal("getconnectioncount", )
+	// TODO format transactions in mem pool
+	if c.Bool("showtxpool") {
+		result, err := rpc.CallAndUnmarshal("getrawmempool")
 		if err != nil {
-			fmt.Println("error: get node connections failed, ", err)
-			return err
-		}
-		fmt.Println(result)
-		return nil
-	}
-
-	if c.Bool("neighbor") {
-		result, err := rpc.CallAndUnmarshal("getneighbor", )
-		if err != nil {
-			fmt.Println("error: get node neighbors info failed, ", err)
-			return err
-		}
-		fmt.Println(result)
-		return nil
-	}
-
-	if c.Bool("state") {
-		result, err := rpc.CallAndUnmarshal("getnodestate", )
-		if err != nil {
-			fmt.Println("error: get node state info failed, ", err)
-			return err
-		}
-		fmt.Println(result)
-		return nil
-	}
-
-	if c.Bool("version") {
-		result, err := rpc.CallAndUnmarshal("getversion", )
-		if err != nil {
-			fmt.Println("error: get node version failed, ", err)
+			fmt.Println("error: get transaction pool failed, ", err)
 			return err
 		}
 		fmt.Println(result)
@@ -112,20 +133,8 @@ func NewCommand() *cli.Command {
 		ArgsUsage:   "[args]",
 		Flags: []cli.Flag{
 			cli.BoolFlag{
-				Name:  "blockcount, bc",
-				Usage: "current blocks in the blockchain",
-			},
-			cli.StringFlag{
-				Name:  "getblock, gb",
-				Usage: "query a block with height or it's hash",
-			},
-			cli.StringFlag{
-				Name:  "gettransaction, gt",
-				Usage: "query a transaction with it's hash",
-			},
-			cli.BoolFlag{
-				Name:  "bestblockhash",
-				Usage: "get the latest block's hash",
+				Name:  "version, v",
+				Usage: "version of the connected node",
 			},
 			cli.BoolFlag{
 				Name:  "connections, cs",
@@ -137,11 +146,31 @@ func NewCommand() *cli.Command {
 			},
 			cli.BoolFlag{
 				Name:  "state, s",
-				Usage: "the connected node's state",
+				Usage: "get the connected node's state",
 			},
 			cli.BoolFlag{
-				Name:  "version, v",
-				Usage: "version of the connected node",
+				Name:  "blockcount, bc",
+				Usage: "current blocks in the blockchain",
+			},
+			cli.UintFlag{
+				Name:  "getblockhash, gbh",
+				Usage: "query a block's hash with it's height",
+			},
+			cli.StringFlag{
+				Name:  "getblock, gb",
+				Usage: "query a block with height or it's hash",
+			},
+			cli.BoolFlag{
+				Name:  "bestblockhash, bbh",
+				Usage: "get the latest block's hash",
+			},
+			cli.StringFlag{
+				Name:  "gettransaction, gt",
+				Usage: "query a transaction with it's hash",
+			},
+			cli.BoolFlag{
+				Name:  "showtxpool, stp",
+				Usage: "show the transactions in node's transaction pool",
 			},
 		},
 		Action: infoAction,
