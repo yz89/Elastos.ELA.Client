@@ -233,7 +233,7 @@ func output(haveSign, needSign int, txn *tx.Transaction) error {
 	txn.Serialize(buf)
 	content := BytesToHexString(buf.Bytes())
 
-	// Output to console
+	// Print transaction hex string content to console
 	fmt.Println(content)
 
 	// Output to file
@@ -257,6 +257,9 @@ func output(haveSign, needSign int, txn *tx.Transaction) error {
 	if err != nil {
 		return err
 	}
+
+	// Print output file to console
+	fmt.Println("File: ", fileName)
 
 	return nil
 }
