@@ -9,7 +9,13 @@ import (
 	"encoding/json"
 
 	"ELAClient/common/config"
+	"errors"
 )
+
+type Response struct {
+	Code   int         `json:"code""`
+	Result interface{} `json:"result""`
+}
 
 var rpcAddress = getRPCAddress()
 
@@ -68,16 +74,20 @@ func CallAndUnmarshal(method string, params map[string]string) (interface{}, err
 		return nil, err
 	}
 
-	resp := map[string]interface{}{}
+	resp := Response{}
 	err = json.Unmarshal(body, &resp)
 	if err != nil {
 		return string(body), nil
 	}
 
-	if resp["result"] == nil {
+	if resp.Code != 0 {
+		return nil, errors.New(resp.Result.(string))
+	}
+
+	if resp.Result == nil {
 		return "", nil
 	}
-	return resp["result"], nil
+	return resp.Result, nil
 }
 
 func unmarshal(result interface{}, target interface{}) error {

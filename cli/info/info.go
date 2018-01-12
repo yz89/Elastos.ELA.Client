@@ -131,7 +131,7 @@ func NewCommand() *cli.Command {
 				Usage: "how many connections are holding by the connected node",
 			},
 			cli.BoolFlag{
-				Name:  "neighbor, nb",
+				Name:  "neighbors, nbs",
 				Usage: "neighbor information of the connected node",
 			},
 			cli.BoolFlag{
