@@ -9,7 +9,7 @@ import (
 	"ELAClient/common/log"
 	"ELAClient/cli/mining"
 	"github.com/urfave/cli"
-	"ELAClient/cli/log_level"
+	cliLog "ELAClient/cli/log"
 )
 
 var Version string
@@ -29,7 +29,7 @@ func main() {
 	app.HideVersion = false
 	//commands
 	app.Commands = []cli.Command{
-		*log_level.NewCommand(),
+		*cliLog.NewCommand(),
 		*info.NewCommand(),
 		*wallet.NewCommand(),
 		*mining.NewCommand(),

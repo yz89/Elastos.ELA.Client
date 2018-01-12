@@ -1,4 +1,4 @@
-package log_level
+package log
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ func debugAction(c *cli.Context) error {
 		return nil
 	}
 
-	if level := c.Int("level"); level != -1 {
+	if level := c.Int("level"); level >= 0 {
 		result, err := CallAndUnmarshal("setloglevel", Param("level", level))
 		if err != nil {
 			fmt.Println("error: set debug info failed, ", err)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"errors"
 	"strconv"
+	"strings"
 
 	. "ELAClient/rpc"
 
@@ -17,15 +18,12 @@ func miningAction(c *cli.Context) error {
 	}
 
 	if action := c.String("toggle"); action != "" {
-		var isMining bool
-		if action == "start" || action == "START" {
-			isMining = true
-		} else if action == "stop" || action == "STOP" {
-			isMining = false
-		} else {
+		action = strings.ToLower(action)
+		if action != "start" && action != "stop" {
 			return errors.New("toggle argument must be [start, stop]")
 		}
-		result, err := CallAndUnmarshal("togglemining", Param("mining", isMining))
+
+		result, err := CallAndUnmarshal("togglemining", Param("mining", action))
 		if err != nil {
 			return err
 		}
