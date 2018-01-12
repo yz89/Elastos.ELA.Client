@@ -1,8 +1,9 @@
-package debug
+package log_level
 
 import (
 	"fmt"
-	"ELAClient/rpc"
+
+	. "ELAClient/rpc"
 
 	"github.com/urfave/cli"
 )
@@ -14,7 +15,7 @@ func debugAction(c *cli.Context) error {
 	}
 
 	if level := c.Int("level"); level != -1 {
-		result, err := rpc.CallAndUnmarshal("setdebuginfo", level)
+		result, err := CallAndUnmarshal("setloglevel", Param("level", level))
 		if err != nil {
 			fmt.Println("error: set debug info failed, ", err)
 			return err
@@ -27,9 +28,9 @@ func debugAction(c *cli.Context) error {
 }
 
 func NewCommand() *cli.Command {
-	return &cli.Command{Name: "debug",
-		Usage: "blockchain node debugging",
-		Description: "With ela-cli debug, you could debug blockchain node.",
+	return &cli.Command{Name: "log",
+		Usage: "set node log output level",
+		Description: "With ela-cli log, you could change blockchain node log output level.",
 		ArgsUsage: "[args]",
 		Flags: []cli.Flag{
 			cli.IntFlag{

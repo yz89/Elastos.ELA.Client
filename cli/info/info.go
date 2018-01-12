@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"ELAClient/rpc"
+	. "ELAClient/rpc"
 	"github.com/urfave/cli"
 )
 
@@ -15,7 +15,7 @@ func infoAction(c *cli.Context) error {
 	}
 
 	if c.Bool("version") {
-		result, err := rpc.CallAndUnmarshal("getversion")
+		result, err := CallAndUnmarshal("getversion", nil)
 		if err != nil {
 			fmt.Println("error: get node version failed, ", err)
 			return err
@@ -25,7 +25,7 @@ func infoAction(c *cli.Context) error {
 	}
 
 	if c.Bool("connections") {
-		result, err := rpc.CallAndUnmarshal("getconnectioncount")
+		result, err := CallAndUnmarshal("getconnectioncount", nil)
 		if err != nil {
 			fmt.Println("error: get node connections failed, ", err)
 			return err
@@ -35,7 +35,7 @@ func infoAction(c *cli.Context) error {
 	}
 
 	if c.Bool("neighbor") {
-		result, err := rpc.CallAndUnmarshal("getneighbor")
+		result, err := CallAndUnmarshal("getneighbors", nil)
 		if err != nil {
 			fmt.Println("error: get node neighbors info failed, ", err)
 			return err
@@ -45,7 +45,7 @@ func infoAction(c *cli.Context) error {
 	}
 
 	if c.Bool("state") {
-		result, err := rpc.CallAndUnmarshal("getnodestate")
+		result, err := CallAndUnmarshal("getnodestate", nil)
 		if err != nil {
 			fmt.Println("error: get node state info failed, ", err)
 			return err
@@ -54,8 +54,8 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	if c.Bool("blockcount") {
-		result, err := rpc.CallAndUnmarshal("getblockcount")
+	if c.Bool("currentheight") {
+		result, err := CallAndUnmarshal("getcurrentheight", nil)
 		if err != nil {
 			fmt.Println("error: get block count failed, ", err)
 			return err
@@ -65,7 +65,7 @@ func infoAction(c *cli.Context) error {
 	}
 
 	if height := c.Uint("getblockhash"); height >= 0 {
-		result, err := rpc.CallAndUnmarshal("getblockhash", height)
+		result, err := CallAndUnmarshal("getblockhash", Param("height", height))
 		if err != nil {
 			fmt.Println("error: get block hash failed, ", err)
 			return err
@@ -79,9 +79,9 @@ func infoAction(c *cli.Context) error {
 
 		var result interface{}
 		if err == nil {
-			result, err = rpc.CallAndUnmarshal("getblock", height)
+			result, err = CallAndUnmarshal("getblockbyheight", Param("height", height))
 		} else {
-			result, err = rpc.CallAndUnmarshal("getblock", param)
+			result, err = CallAndUnmarshal("getblockbyhash", Param("hash", param))
 		}
 		if err != nil {
 			fmt.Println("error: get block failed, ", err)
@@ -92,7 +92,7 @@ func infoAction(c *cli.Context) error {
 	}
 
 	if param := c.String("gettransaction"); param != "" {
-		result, err := rpc.CallAndUnmarshal("getrawtransaction", param)
+		result, err := CallAndUnmarshal("getrawtransaction", Param("hash", param))
 		if err != nil {
 			fmt.Println("error: get transaction failed, ", err)
 			return err
@@ -101,19 +101,9 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	if c.Bool("bestblockhash") {
-		result, err := rpc.CallAndUnmarshal("getbestblockhash")
-		if err != nil {
-			fmt.Println("error: get last block hash failed, ", err)
-			return err
-		}
-		fmt.Println(result)
-		return nil
-	}
-
 	// TODO format transactions in mem pool
 	if c.Bool("showtxpool") {
-		result, err := rpc.CallAndUnmarshal("getrawmempool")
+		result, err := CallAndUnmarshal("gettransactionpool", nil)
 		if err != nil {
 			fmt.Println("error: get transaction pool failed, ", err)
 			return err
@@ -149,7 +139,7 @@ func NewCommand() *cli.Command {
 				Usage: "get the connected node's state",
 			},
 			cli.BoolFlag{
-				Name:  "blockcount, bc",
+				Name:  "currentheight, ch",
 				Usage: "current blocks in the blockchain",
 			},
 			cli.UintFlag{
@@ -159,10 +149,6 @@ func NewCommand() *cli.Command {
 			cli.StringFlag{
 				Name:  "getblock, gb",
 				Usage: "query a block with height or it's hash",
-			},
-			cli.BoolFlag{
-				Name:  "bestblockhash, bbh",
-				Usage: "get the latest block's hash",
 			},
 			cli.StringFlag{
 				Name:  "gettransaction, gt",

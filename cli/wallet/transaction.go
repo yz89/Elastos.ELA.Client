@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"io/ioutil"
 
-	"ELAClient/rpc"
+	. "ELAClient/rpc"
 	. "ELAClient/common"
 	"ELAClient/common/log"
 	walt "ELAClient/wallet"
@@ -184,7 +184,7 @@ func sendTransaction(context *cli.Context) error {
 		return errors.New("deserialize transaction failed")
 	}
 
-	result, err := rpc.CallAndUnmarshal("sendrawtransaction", content)
+	result, err := CallAndUnmarshal("sendrawtransaction", Param("Data", content))
 	if err != nil {
 		return err
 	}

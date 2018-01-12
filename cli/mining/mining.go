@@ -1,12 +1,13 @@
 package mining
 
 import (
-	"ELAClient/rpc"
+	"fmt"
 	"errors"
+	"strconv"
+
+	. "ELAClient/rpc"
 
 	"github.com/urfave/cli"
-	"strconv"
-	"fmt"
 )
 
 func miningAction(c *cli.Context) error {
@@ -24,7 +25,7 @@ func miningAction(c *cli.Context) error {
 		} else {
 			return errors.New("toggle argument must be [start, stop]")
 		}
-		result, err := rpc.CallAndUnmarshal("togglecpumining", isMining)
+		result, err := CallAndUnmarshal("togglemining", Param("mining", isMining))
 		if err != nil {
 			return err
 		}
@@ -38,7 +39,7 @@ func miningAction(c *cli.Context) error {
 		if err != nil || number < 1 {
 			return errors.New("[number] must be a positive integer")
 		}
-		result, err := rpc.CallAndUnmarshal("discretemining", number)
+		result, err := CallAndUnmarshal("manualmining", Param("count", number))
 		if err != nil {
 			return err
 		}

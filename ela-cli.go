@@ -4,12 +4,12 @@ import (
 	"os"
 	"sort"
 
-	"ELAClient/cli/debug"
 	"ELAClient/cli/info"
 	"ELAClient/cli/wallet"
+	"ELAClient/common/log"
 	"ELAClient/cli/mining"
 	"github.com/urfave/cli"
-	"ELAClient/common/log"
+	"ELAClient/cli/log_level"
 )
 
 var Version string
@@ -29,7 +29,7 @@ func main() {
 	app.HideVersion = false
 	//commands
 	app.Commands = []cli.Command{
-		*debug.NewCommand(),
+		*log_level.NewCommand(),
 		*info.NewCommand(),
 		*wallet.NewCommand(),
 		*mining.NewCommand(),
