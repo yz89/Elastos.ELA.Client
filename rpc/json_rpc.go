@@ -17,8 +17,8 @@ func getRPCAddress() string {
 	return "http://" + config.Config().IpAddress + ":" + strconv.Itoa(config.Config().HttpJsonPort)
 }
 
-func GetBlockCount() (uint32, error) {
-	result, err := CallAndUnmarshal("getblockcount")
+func GetCurrentHeight() (uint32, error) {
+	result, err := CallAndUnmarshal("getcurrentheight", nil)
 	if err != nil {
 		return 0, err
 	}
@@ -26,7 +26,7 @@ func GetBlockCount() (uint32, error) {
 }
 
 func GetBlockByHeight(height uint32) (*BlockInfo, error) {
-	resp, err := CallAndUnmarshal("getblock", height)
+	resp, err := CallAndUnmarshal("getblock", Param("Height", height))
 	if err != nil {
 		return nil, err
 	}
@@ -36,10 +36,9 @@ func GetBlockByHeight(height uint32) (*BlockInfo, error) {
 	return block, nil
 }
 
-func Call(method string, params ...interface{}) ([]byte, error) {
+func Call(method string, params map[string]string) ([]byte, error) {
 	data, err := json.Marshal(map[string]interface{}{
 		"method": method,
-		"id":     88888,
 		"params": params,
 	})
 	if err != nil {
@@ -63,8 +62,8 @@ func Call(method string, params ...interface{}) ([]byte, error) {
 	return body, nil
 }
 
-func CallAndUnmarshal(method string, params ...interface{}) (interface{}, error) {
-	body, err := Call(method, format(params...)...)
+func CallAndUnmarshal(method string, params map[string]string) (interface{}, error) {
+	body, err := Call(method, params)
 	if err != nil {
 		return nil, err
 	}
@@ -79,13 +78,6 @@ func CallAndUnmarshal(method string, params ...interface{}) (interface{}, error)
 		return "", nil
 	}
 	return resp["result"], nil
-}
-
-func format(params ...interface{}) []interface{} {
-	if params == nil {
-		return []interface{}{}
-	}
-	return params
 }
 
 func unmarshal(result interface{}, target interface{}) error {

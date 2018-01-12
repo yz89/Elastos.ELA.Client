@@ -25,8 +25,7 @@ func AesEncrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
 	if err != nil {
 		return nil, errors.New("invalid decrypt key")
 	}
-	//blockSize := block.BlockSize()
-	//plaintext = PKCS5Padding(plaintext, blockSize)
+
 	blockMode := cipher.NewCBCEncrypter(block, iv)
 
 	ciphertext := make([]byte, len(plaintext))
@@ -56,7 +55,6 @@ func AesDecrypt(ciphertext []byte, key []byte, iv []byte) ([]byte, error) {
 
 	plaintext := make([]byte, len(ciphertext))
 	blockModel.CryptBlocks(plaintext, ciphertext)
-	//plaintext = PKCS5UnPadding(plaintext)
 
 	return plaintext, nil
 }

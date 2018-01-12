@@ -52,7 +52,7 @@ func (sync *DataSyncImpl) SyncChainData() {
 
 func (sync *DataSyncImpl) needSyncBlocks() (uint32, bool) {
 
-	chainHeight, err := rpc.GetBlockCount()
+	chainHeight, err := rpc.GetCurrentHeight()
 	if err != nil {
 		return 0, false
 	}
