@@ -32,7 +32,7 @@ func GetCurrentHeight() (uint32, error) {
 }
 
 func GetBlockByHeight(height uint32) (*BlockInfo, error) {
-	resp, err := CallAndUnmarshal("getblock", Param("Height", height))
+	resp, err := CallAndUnmarshal("getblockbyheight", Param("height", height))
 	if err != nil {
 		return nil, err
 	}
