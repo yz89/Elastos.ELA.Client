@@ -94,6 +94,7 @@ func OpenFromOldVersion() (*KeystoreFile, error) {
 	}
 
 	keystoreFile := &KeystoreFile{
+		fileName:            DefaultKeystoreFile,
 		Version:             KeystoreVersion,
 		IV:                  content["IV"].(string),
 		PasswordHash:        content["PasswordHash"].(string),
