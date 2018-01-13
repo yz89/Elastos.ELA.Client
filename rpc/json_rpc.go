@@ -81,7 +81,7 @@ func CallAndUnmarshal(method string, params map[string]string) (interface{}, err
 	}
 
 	if resp.Code != 0 {
-		return nil, errors.New(resp.Result.(string))
+		return nil, errors.New(fmt.Sprint(resp.Result))
 	}
 
 	if resp.Result == nil {
