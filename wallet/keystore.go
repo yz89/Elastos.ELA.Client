@@ -137,7 +137,7 @@ func (store *KeystoreImpl) init(privateKey []byte, publicKey *crypto.PublicKey) 
 	// Set public key
 	store.publicKey = publicKey
 
-	signatureRedeemScript, err := CreateSignatureRedeemScript(publicKey)
+	signatureRedeemScript, err := CreateStandardRedeemScript(publicKey)
 	if err != nil {
 		return err
 	}

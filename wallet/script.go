@@ -7,19 +7,12 @@ import (
 	"math/big"
 
 	"ELAClient/crypto"
+	tx "ELAClient/core/transaction"
 )
 
 type OpCode byte
 
-const (
-	PUSH0 = 0x00
-	PUSH1 = 0x51
-
-	CHECKSIG      = 0xAC
-	CHECKMULTISIG = 0xAE
-)
-
-func CreateSignatureRedeemScript(publicKey *crypto.PublicKey) ([]byte, error) {
+func CreateStandardRedeemScript(publicKey *crypto.PublicKey) ([]byte, error) {
 	content, err := publicKey.EncodePoint(true)
 	if err != nil {
 		return nil, errors.New("[Wallet],CreateSignatureRedeemScript failed.")
@@ -27,22 +20,24 @@ func CreateSignatureRedeemScript(publicKey *crypto.PublicKey) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	buf.WriteByte(byte(len(content)))
 	buf.Write(content)
-	buf.WriteByte(byte(CHECKSIG))
+	buf.WriteByte(byte(tx.CHECKSIG))
+
 	return buf.Bytes(), nil
 }
 
 func CreateMultiSignRedeemScript(publicKeys []*crypto.PublicKey) ([]byte, error) {
 	M := len(publicKeys)/2 + 1
 
+	// Write M
 	bigM := big.NewInt(int64(M))
-	opCode := OpCode(byte(PUSH1) - 1 + bigM.Bytes()[0])
-
+	opCode := OpCode(byte(tx.PUSH1) - 1 + bigM.Bytes()[0])
 	buf := new(bytes.Buffer)
 	buf.WriteByte(byte(opCode))
 
 	//sort pubkey
 	sort.Sort(crypto.PubKeySlice(publicKeys))
 
+	// Write public keys
 	for _, pubkey := range publicKeys {
 		content, err := pubkey.EncodePoint(true)
 		if err != nil {
@@ -52,10 +47,11 @@ func CreateMultiSignRedeemScript(publicKeys []*crypto.PublicKey) ([]byte, error)
 		buf.Write(content)
 	}
 
+	// Write N
 	bigKeys := big.NewInt(int64(len(publicKeys)))
-	opCode = OpCode(byte(PUSH1) - 1 + bigKeys.Bytes()[0])
+	opCode = OpCode(byte(tx.PUSH1) - 1 + bigKeys.Bytes()[0])
 	buf.WriteByte(byte(opCode))
-	buf.WriteByte(CHECKMULTISIG)
+	buf.WriteByte(tx.CHECKMULTISIG)
 
 	return buf.Bytes(), nil
 }

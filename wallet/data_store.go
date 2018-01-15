@@ -32,8 +32,7 @@ const (
 	CreateAddressesTable = `CREATE TABLE IF NOT EXISTS Addresses (
 				Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 				ProgramHash BLOB UNIQUE,
-				RedeemScript BLOB,
-				AddressType INTEGER
+				RedeemScript BLOB
 			);`
 	CreateUTXOsTable = `CREATE TABLE IF NOT EXISTS UTXOs (
 				Id INTEGER NOT NULL PRIMARY KEY,
@@ -44,13 +43,7 @@ const (
 			);`
 )
 
-const (
-	AddressTypeStandard  = 1
-	AddressTypeMultiSign = 2
-)
-
 type Address struct {
-	Type         int
 	Address      string
 	ProgramHash  *Uint168
 	RedeemScript []byte
@@ -67,9 +60,9 @@ type DataStore interface {
 
 	CurrentHeight(height uint32) uint32
 
-	AddAddress(programHash *Uint168, redeemScript []byte, addressType int) error
+	AddAddress(programHash *Uint168, redeemScript []byte) error
 	DeleteAddress(programHash *Uint168) error
-	GetAddressByUTXO(input *tx.UTXOTxInput) (*Address, error)
+	GetAddressInfo(programHash *Uint168) (*Address, error)
 	GetAddresses() ([]*Address, error)
 
 	AddAddressUTXO(programHash *Uint168, utxo *AddressUTXO) error
@@ -154,7 +147,7 @@ func (store *DataStoreImpl) ResetDataStore() error {
 	}
 
 	for _, address := range addresses {
-		err = store.AddAddress(address.ProgramHash, address.RedeemScript, address.Type)
+		err = store.AddAddress(address.ProgramHash, address.RedeemScript)
 		if err != nil {
 			return err
 		}
@@ -190,15 +183,15 @@ func (store *DataStoreImpl) CurrentHeight(height uint32) uint32 {
 	return storedHeight
 }
 
-func (store *DataStoreImpl) AddAddress(programHash *Uint168, redeemScript []byte, addressType int) error {
+func (store *DataStoreImpl) AddAddress(programHash *Uint168, redeemScript []byte) error {
 	store.Lock()
 	defer store.Unlock()
 
-	stmt, err := store.Prepare("INSERT INTO Addresses(ProgramHash, RedeemScript, AddressType) values(?,?,?)")
+	stmt, err := store.Prepare("INSERT INTO Addresses(ProgramHash, RedeemScript) values(?,?)")
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(programHash.ToArray(), redeemScript, addressType)
+	_, err = stmt.Exec(programHash.ToArray(), redeemScript)
 	if err != nil {
 		return err
 	}
@@ -240,26 +233,15 @@ func (store *DataStoreImpl) DeleteAddress(programHash *Uint168) error {
 	return nil
 }
 
-func (store *DataStoreImpl) GetAddressByUTXO(input *tx.UTXOTxInput) (*Address, error) {
+func (store *DataStoreImpl) GetAddressInfo(programHash *Uint168) (*Address, error) {
 	store.Lock()
 	defer store.Unlock()
 
-	// Serialize input
-	buf := new(bytes.Buffer)
-	input.Serialize(buf)
-	inputBytes := buf.Bytes()
-	// Query address by UTXO input
-	sql := `SELECT A.ProgramHash, A.RedeemScript, A.AddressType FROM Addresses AS A
-						  INNER JOIN UTXOs AS U ON A.Id=U.AddressId WHERE UTXOInput=?`
-	row := store.QueryRow(sql, inputBytes)
-	var programHashBytes []byte
+	// Query address info by it's ProgramHash
+	sql := `SELECT RedeemScript FROM Addresses WHERE ProgramHash=?`
+	row := store.QueryRow(sql, programHash.ToArray())
 	var redeemScript []byte
-	var addressType int
-	err := row.Scan(&programHashBytes, &redeemScript, &addressType)
-	if err != nil {
-		return nil, err
-	}
-	programHash, err := Uint160ParseFromBytes(programHashBytes)
+	err := row.Scan(&redeemScript)
 	if err != nil {
 		return nil, err
 	}
@@ -267,14 +249,14 @@ func (store *DataStoreImpl) GetAddressByUTXO(input *tx.UTXOTxInput) (*Address, e
 	if err != nil {
 		return nil, err
 	}
-	return &Address{addressType, address, programHash, redeemScript}, nil
+	return &Address{address, programHash, redeemScript}, nil
 }
 
 func (store *DataStoreImpl) GetAddresses() ([]*Address, error) {
 	store.Lock()
 	defer store.Unlock()
 
-	rows, err := store.Query("SELECT ProgramHash, RedeemScript, AddressType FROM Addresses")
+	rows, err := store.Query("SELECT ProgramHash, RedeemScript FROM Addresses")
 	if err != nil {
 		log.Error("Get address query error:", err)
 		return nil, err
@@ -285,8 +267,7 @@ func (store *DataStoreImpl) GetAddresses() ([]*Address, error) {
 	for rows.Next() {
 		var programHashBytes []byte
 		var redeemScript []byte
-		var addressType int
-		err = rows.Scan(&programHashBytes, &redeemScript, &addressType)
+		err = rows.Scan(&programHashBytes, &redeemScript)
 		if err != nil {
 			log.Error("Get address scan row:", err)
 			return nil, err
@@ -299,7 +280,7 @@ func (store *DataStoreImpl) GetAddresses() ([]*Address, error) {
 		if err != nil {
 			return nil, err
 		}
-		addresses = append(addresses, &Address{addressType, address, programHash, redeemScript})
+		addresses = append(addresses, &Address{address, programHash, redeemScript})
 	}
 	return addresses, nil
 }
