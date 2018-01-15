@@ -24,6 +24,12 @@ const (
 	TransferAsset TransactionType = 0x02
 	Record        TransactionType = 0x03
 	Deploy        TransactionType = 0x04
+
+	PUSH0 = 0x00
+	PUSH1 = 0x51
+
+	CHECKSIG      = 0xAC
+	CHECKMULTISIG = 0xAE
 )
 
 func (self TransactionType) Name() string {
@@ -360,12 +366,38 @@ func (tx *Transaction) Verify() error {
 	return nil
 }
 
-func ParseMultiSignTransactionCode(code []byte) []*Uint168 {
-	if len(code) < MinMultiSignCodeLength {
-		fmt.Println("short code in multisig transaction detected")
-		return nil
+func (tx *Transaction) GetTransactionCode() ([]byte, error) {
+	code := tx.GetPrograms()[0].Code
+	if code == nil {
+		return nil, errors.New("invalid transaction type, redeem script not found")
 	}
+	return code, nil
+}
 
+func (tx *Transaction) GetStandardSigner() (*Uint168, error) {
+	code, err := tx.GetTransactionCode()
+	if err != nil {
+		return nil, err
+	}
+	if len(code) != PublicKeyScriptLength {
+		return nil, errors.New("not a valid standard transaction code, length not match")
+	}
+	// remove last byte CHECKSIG
+	code = code[:len(code)-1]
+	script := make([]byte, PublicKeyScriptLength)
+	copy(script, code[:PublicKeyScriptLength])
+
+	return ToScriptHash(script, SignTypeSingle)
+}
+
+func (tx *Transaction) GetMultiSignSigners() ([]*Uint168, error) {
+	code, err := tx.GetTransactionCode()
+	if err != nil {
+		return nil, err
+	}
+	if len(code) < MinMultiSignCodeLength {
+		return nil, errors.New("not a valid multi sign transaction code, length not enough")
+	}
 	// remove last byte CHECKMULTISIG
 	code = code[:len(code)-1]
 	// remove m
@@ -373,8 +405,7 @@ func ParseMultiSignTransactionCode(code []byte) []*Uint168 {
 	// remove n
 	code = code[:len(code)-1]
 	if len(code)%(PublicKeyScriptLength-1) != 0 {
-		fmt.Println("invalid code in multisig transaction detected")
-		return nil
+		return nil, errors.New("not a valid multi sign transaction code, length not match")
 	}
 
 	var programHash []*Uint168
@@ -388,48 +419,68 @@ func ParseMultiSignTransactionCode(code []byte) []*Uint168 {
 		programHash = append(programHash, hash)
 	}
 
-	return programHash
+	return programHash, nil
 }
 
-func (tx *Transaction) ParseTransactionCode() []*Uint168 {
-	// TODO: parse Programs[1:]
-	code := make([]byte, len(tx.Programs[0].Code))
-	copy(code, tx.Programs[0].Code)
-
-	return ParseMultiSignTransactionCode(code)
-}
-
-func (tx *Transaction) ParseTransactionSig() (havesig, needsig int, err error) {
-	if len(tx.Programs) <= 0 {
-		return -1, -1, errors.New("missing transation program")
-	}
-	x := len(tx.Programs[0].Parameter) / SignatureScriptLength
-	y := len(tx.Programs[0].Parameter) % SignatureScriptLength
-
-	return x, y, nil
-}
-
-func (tx *Transaction) AppendSignature(sig []byte) error {
-	if len(tx.Programs) <= 0 {
-		return errors.New("missing transation program")
-	}
-
-	newsig := []byte{}
-	newsig = append(newsig, byte(len(sig)))
-	newsig = append(newsig, sig...)
-
-	havesig, _, err := tx.ParseTransactionSig()
+func (tx *Transaction) GetTransactionType() (byte, error) {
+	code, err := tx.GetTransactionCode()
 	if err != nil {
-		return err
+		return 0, err
+	}
+	if len(code) != PublicKeyScriptLength && len(code) < MinMultiSignCodeLength {
+		return 0, errors.New("invalid transaction type, redeem script not a standard or multi sign type")
+	}
+	return code[len(code)-1], nil
+}
+
+func (tx *Transaction) getM() (int) {
+	return int(tx.Programs[0].Code[0] - PUSH1 + 1)
+}
+
+func (tx *Transaction) GetSignStatus() (haveSign, needSign int, err error) {
+	if len(tx.Programs) <= 0 {
+		return -1, -1, errors.New("missing transaction program")
 	}
 
-	existedsigs := tx.Programs[0].Parameter[0: havesig*SignatureScriptLength]
-	leftsigs := tx.Programs[0].Parameter[havesig*SignatureScriptLength+1:]
+	signType, err := tx.GetTransactionType()
+	if err != nil {
+		return -1, -1, err
+	}
 
-	tx.Programs[0].Parameter = nil
-	tx.Programs[0].Parameter = append(tx.Programs[0].Parameter, existedsigs...)
-	tx.Programs[0].Parameter = append(tx.Programs[0].Parameter, newsig...)
-	tx.Programs[0].Parameter = append(tx.Programs[0].Parameter, leftsigs...)
+	if signType == CHECKSIG {
+		signed := len(tx.Programs[0].Parameter) / SignatureScriptLength
+		return signed, 1, nil
+
+	} else if signType == CHECKMULTISIG {
+
+		haveSign = len(tx.Programs[0].Parameter) / SignatureScriptLength
+
+		return haveSign, tx.getM(), nil
+	}
+
+	return -1, -1, errors.New("invalid transaction type")
+}
+
+func (tx *Transaction) AppendSignature(signature []byte) error {
+	if len(tx.Programs) <= 0 {
+		return errors.New("missing transaction program")
+	}
+	// Create new signature
+	newSign := append([]byte{}, byte(len(signature)))
+	newSign = append(newSign, signature...)
+
+	param := tx.Programs[0].Parameter
+	buf := new(bytes.Buffer)
+
+	// Check if is first signature
+	if param == nil {
+		param = []byte{}
+	}
+
+	buf.Write(param)
+	buf.Write(newSign)
+
+	tx.Programs[0].Parameter = buf.Bytes()
 
 	return nil
 }

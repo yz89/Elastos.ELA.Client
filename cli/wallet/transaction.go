@@ -150,8 +150,8 @@ func signTransaction(name string, password []byte, context *cli.Context, wallet 
 		return errors.New("deserialize transaction failed")
 	}
 
-	_, needSign, err := txn.ParseTransactionSig()
-	if needSign == 0 {
+	haveSign, needSign, err := txn.GetSignStatus()
+	if haveSign == needSign {
 		return errors.New("transaction was fully signed, no need more sign")
 	}
 
@@ -160,8 +160,8 @@ func signTransaction(name string, password []byte, context *cli.Context, wallet 
 		return err
 	}
 
-	haveSign, needSign, _ := txn.ParseTransactionSig()
-	fmt.Println("[", haveSign, "/", haveSign+needSign, "] Transaction successfully signed")
+	haveSign, needSign, _ = txn.GetSignStatus()
+	fmt.Println("[", haveSign, "/", needSign, "] Transaction successfully signed")
 
 	output(haveSign, needSign, &txn)
 
@@ -239,11 +239,11 @@ func output(haveSign, needSign int, txn *tx.Transaction) error {
 	// Output to file
 	fileName := "to_be_signed" // Create transaction file name
 
-	if haveSign == 0 && needSign == 0 {
+	if haveSign == 0 {
 		//	Transaction created do nothing
-	} else if haveSign+needSign > haveSign {
-		fileName = fmt.Sprint(fileName, "_", haveSign, "_of_", haveSign+needSign)
-	} else if haveSign+needSign == haveSign {
+	} else if needSign > haveSign {
+		fileName = fmt.Sprint(fileName, "_", haveSign, "_of_", needSign)
+	} else if needSign == haveSign {
 		fileName = "ready_to_send"
 	}
 	fileName = fileName + ".txn"
