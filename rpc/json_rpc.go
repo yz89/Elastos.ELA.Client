@@ -84,9 +84,6 @@ func CallAndUnmarshal(method string, params map[string]string) (interface{}, err
 		return nil, errors.New(fmt.Sprint(resp.Result))
 	}
 
-	if resp.Result == nil {
-		return "", nil
-	}
 	return resp.Result, nil
 }
 

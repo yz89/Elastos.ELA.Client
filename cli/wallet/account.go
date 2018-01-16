@@ -42,10 +42,8 @@ func getPublicKeys(content string) ([]*crypto.PublicKey, error) {
 
 	// Get public key strings
 	var publicKeyStrings []string
-	if strings.Contains(content, "/") { // if content is a file path
-		if _, err := os.Stat(content); err != nil {
-			return nil, errors.New("invalid transaction file path")
-		}
+	if _, err := os.Stat(content); err == nil { // if content is a file
+
 		file, err := os.OpenFile(content, os.O_RDONLY, 0666)
 		if err != nil {
 			return nil, errors.New("open public key file failed")
@@ -57,6 +55,16 @@ func getPublicKeys(content string) ([]*crypto.PublicKey, error) {
 		publicKeyStrings = strings.Split(strings.TrimSpace(string(rawData)), "\n")
 	} else {
 		publicKeyStrings = strings.Split(strings.TrimSpace(content), ",")
+	}
+
+	// Check if have duplicate public key
+	keyMap := map[string]string{}
+	for _, publicKeyString := range publicKeyStrings {
+		if keyMap[publicKeyString] == "" {
+			keyMap[publicKeyString] = publicKeyString
+		} else {
+			return nil, errors.New(fmt.Sprint("duplicate public key:", publicKeyString))
+		}
 	}
 
 	// Decode public keys from public key strings
