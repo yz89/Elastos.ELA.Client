@@ -227,7 +227,6 @@ func getTransactionContent(context *cli.Context) (string, error) {
 }
 
 func output(haveSign, needSign int, txn *tx.Transaction) error {
-
 	// Serialise transaction content
 	buf := new(bytes.Buffer)
 	txn.Serialize(buf)
