@@ -322,7 +322,7 @@ func (wallet *WalletImpl) removeLockedUTXOs(utxos []*AddressUTXO) []*AddressUTXO
 	var availableUTXOs []*AddressUTXO
 	var currentHeight = wallet.CurrentHeight(QueryHeightCode)
 	for _, utxo := range utxos {
-		if utxo.Input.Sequence > currentHeight {
+		if utxo.Input.Sequence >= currentHeight {
 			continue
 		}
 		availableUTXOs = append(availableUTXOs, utxo)
@@ -348,5 +348,6 @@ func (wallet *WalletImpl) newTransaction(redeemScript []byte, inputs []*tx.UTXOT
 		BalanceInputs: []*tx.BalanceTxInput{},
 		Outputs:       outputs,
 		Programs:      []*pg.Program{program},
+		LockTime:      wallet.CurrentHeight(QueryHeightCode),
 	}
 }

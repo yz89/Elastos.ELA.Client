@@ -83,10 +83,14 @@ func (sync *DataSyncImpl) processBlock(block *rpc.BlockInfo) {
 				// Create UTXO input from output
 				txHashBytes, _ := HexStringToBytesReverse(txn.Hash)
 				referTxHash, _ := Uint256ParseFromBytes(txHashBytes)
+				lockUtil := output.OutputLock
+				if txn.TxType == tx.CoinBase {
+					lockUtil = block.BlockData.Height + 100
+				}
 				input := &tx.UTXOTxInput{
 					ReferTxID:          *referTxHash,
 					ReferTxOutputIndex: uint16(index),
-					Sequence:           output.OutputLock,
+					Sequence:           lockUtil,
 				}
 				amount, _ := StringToFixed64(output.Value)
 				// Save UTXO input to data store
