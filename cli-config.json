@@ -1,5 +1,5 @@
 ﻿{
-  "LogToFile": true,
+  "LogToFile": false,
   "IpAddress": "127.0.0.1",
   "HttpJsonPort": 40201
 }

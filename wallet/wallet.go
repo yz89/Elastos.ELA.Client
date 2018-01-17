@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"math"
 	"bytes"
 	"errors"
 	"strconv"
@@ -322,8 +323,11 @@ func (wallet *WalletImpl) removeLockedUTXOs(utxos []*AddressUTXO) []*AddressUTXO
 	var availableUTXOs []*AddressUTXO
 	var currentHeight = wallet.CurrentHeight(QueryHeightCode)
 	for _, utxo := range utxos {
-		if utxo.Input.Sequence >= currentHeight {
-			continue
+		if utxo.Input.Sequence > 0 {
+			if utxo.Input.Sequence >= currentHeight {
+				continue
+			}
+			utxo.Input.Sequence = math.MaxUint32 - 1
 		}
 		availableUTXOs = append(availableUTXOs, utxo)
 	}
