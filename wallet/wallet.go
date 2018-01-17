@@ -352,6 +352,6 @@ func (wallet *WalletImpl) newTransaction(redeemScript []byte, inputs []*tx.UTXOT
 		BalanceInputs: []*tx.BalanceTxInput{},
 		Outputs:       outputs,
 		Programs:      []*pg.Program{program},
-		LockTime:      wallet.CurrentHeight(QueryHeightCode),
+		LockTime:      wallet.CurrentHeight(QueryHeightCode) - 1,
 	}
 }
