@@ -17,11 +17,7 @@ type Response struct {
 	Result interface{} `json:"result""`
 }
 
-var rpcAddress = getRPCAddress()
-
-func getRPCAddress() string {
-	return "http://" + config.Config().IpAddress + ":" + strconv.Itoa(config.Config().HttpJsonPort)
-}
+var url string
 
 func GetCurrentHeight() (uint32, error) {
 	result, err := CallAndUnmarshal("getcurrentheight", nil)
@@ -42,7 +38,10 @@ func GetBlockByHeight(height uint32) (*BlockInfo, error) {
 	return block, nil
 }
 
-func Call(method string, params map[string]string) ([]byte, error) {
+func Call(method string, params ...interface{}) ([]byte, error) {
+	if url == "" {
+		url = "http://" + config.Config().IpAddress + ":" + strconv.Itoa(config.Config().HttpJsonPort)
+	}
 	data, err := json.Marshal(map[string]interface{}{
 		"method": method,
 		"params": params,
@@ -52,7 +51,7 @@ func Call(method string, params map[string]string) ([]byte, error) {
 	}
 
 	//log.Trace("RPC call:", string(data))
-	resp, err := http.Post(rpcAddress, "application/json", strings.NewReader(string(data)))
+	resp, err := http.Post(url, "application/json", strings.NewReader(string(data)))
 	if err != nil {
 		fmt.Printf("POST requset: %v\n", err)
 		return nil, err
