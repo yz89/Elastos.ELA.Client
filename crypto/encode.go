@@ -267,7 +267,7 @@ func DecodePoint(encodeData []byte) (*PublicKey, error) {
 	}
 }
 
-func (e *PublicKey) EncodePoint(isCommpressed bool) ([]byte, error) {
+func (e *PublicKey) EncodePoint(isCompressed bool) ([]byte, error) {
 	//if X is infinity, then Y cann't be computed, so here used "||"
 	if nil == e.X || nil == e.Y {
 		infinity := make([]byte, INFINITYLEN)
@@ -276,7 +276,7 @@ func (e *PublicKey) EncodePoint(isCommpressed bool) ([]byte, error) {
 
 	var encodedData []byte
 
-	if isCommpressed {
+	if isCompressed {
 		encodedData = make([]byte, COMPRESSEDLEN)
 	} else {
 		encodedData = make([]byte, NOCOMPRESSEDLEN)
@@ -287,7 +287,7 @@ func (e *PublicKey) EncodePoint(isCommpressed bool) ([]byte, error) {
 	xBytes := e.X.Bytes()
 	copy(encodedData[COMPRESSEDLEN-len(xBytes):COMPRESSEDLEN], xBytes)
 
-	if isCommpressed {
+	if isCompressed {
 		if isEven(e.Y) {
 			encodedData[0] = COMPEVENFLAG
 		} else {

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"crypto/sha256"
 
+	"ELAClient/crypto"
 	. "ELAClient/common"
 	"ELAClient/common/serialization"
 	"ELAClient/core/contract/program"
@@ -25,7 +26,6 @@ const (
 	Record        TransactionType = 0x03
 	Deploy        TransactionType = 0x04
 
-	PUSH0 = 0x00
 	PUSH1 = 0x51
 
 	CHECKSIG      = 0xAC
@@ -379,7 +379,7 @@ func (tx *Transaction) GetStandardSigner() (*Uint168, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(code) != PublicKeyScriptLength {
+	if len(code) != PublicKeyScriptLength || code[len(code)-1] != CHECKSIG {
 		return nil, errors.New("not a valid standard transaction code, length not match")
 	}
 	// remove last byte CHECKSIG
@@ -391,11 +391,27 @@ func (tx *Transaction) GetStandardSigner() (*Uint168, error) {
 }
 
 func (tx *Transaction) GetMultiSignSigners() ([]*Uint168, error) {
+	scripts, err := tx.GetMultiSignPublicKeys()
+	if err != nil {
+		return nil, err
+	}
+
+	var signers []*Uint168
+	for _, script := range scripts {
+		script = append(script, CHECKSIG)
+		hash, _ := ToScriptHash(script, SignTypeSingle)
+		signers = append(signers, hash)
+	}
+
+	return signers, nil
+}
+
+func (tx *Transaction) GetMultiSignPublicKeys() ([][]byte, error) {
 	code, err := tx.GetTransactionCode()
 	if err != nil {
 		return nil, err
 	}
-	if len(code) < MinMultiSignCodeLength {
+	if len(code) < MinMultiSignCodeLength || code[len(code)-1] != CHECKMULTISIG {
 		return nil, errors.New("not a valid multi sign transaction code, length not enough")
 	}
 	// remove last byte CHECKMULTISIG
@@ -408,18 +424,15 @@ func (tx *Transaction) GetMultiSignSigners() ([]*Uint168, error) {
 		return nil, errors.New("not a valid multi sign transaction code, length not match")
 	}
 
-	var programHash []*Uint168
+	var publicKeys [][]byte
 	i := 0
 	for i < len(code) {
 		script := make([]byte, PublicKeyScriptLength-1)
 		copy(script, code[i:i+PublicKeyScriptLength-1])
-		script = append(script, 0xac)
 		i += PublicKeyScriptLength - 1
-		hash, _ := ToScriptHash(script, SignTypeSingle)
-		programHash = append(programHash, hash)
+		publicKeys = append(publicKeys, script)
 	}
-
-	return programHash, nil
+	return publicKeys, nil
 }
 
 func (tx *Transaction) GetTransactionType() (byte, error) {
@@ -461,7 +474,7 @@ func (tx *Transaction) GetSignStatus() (haveSign, needSign int, err error) {
 	return -1, -1, errors.New("invalid transaction type")
 }
 
-func (tx *Transaction) AppendSignature(signature []byte) error {
+func (tx *Transaction) AppendSignature(signerIndex int, signature []byte) error {
 	if len(tx.Programs) <= 0 {
 		return errors.New("missing transaction program")
 	}
@@ -470,13 +483,34 @@ func (tx *Transaction) AppendSignature(signature []byte) error {
 	newSign = append(newSign, signature...)
 
 	param := tx.Programs[0].Parameter
-	buf := new(bytes.Buffer)
 
 	// Check if is first signature
 	if param == nil {
 		param = []byte{}
+	} else {
+		// Check if singer already signed
+		publicKeys, err := tx.GetMultiSignPublicKeys()
+		if err != nil {
+			return err
+		}
+		buf := new(bytes.Buffer)
+		tx.SerializeUnsigned(buf)
+		for i := 0; i < len(param); i += SignatureScriptLength {
+			// Remove length byte
+			sign := param[i:i+SignatureScriptLength][1:]
+			publicKey := publicKeys[signerIndex][1:]
+			pubKey, err := crypto.DecodePoint(publicKey)
+			if err != nil {
+				return err
+			}
+			err = crypto.Verify(*pubKey, buf.Bytes(), sign)
+			if err == nil {
+				return errors.New("signer already signed")
+			}
+		}
 	}
 
+	buf := new(bytes.Buffer)
 	buf.Write(param)
 	buf.Write(newSign)
 
