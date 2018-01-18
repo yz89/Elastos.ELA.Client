@@ -4,12 +4,9 @@ import (
 	"os"
 	"log"
 	"fmt"
-	"time"
 )
 
 const (
-	PATH = "./Log/"
-
 	CALLDEPTH = 1
 
 	BLUE  = "0;34"
@@ -21,27 +18,6 @@ var logger *log.Logger
 
 func InitLog() {
 	logger = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
-}
-
-func OpenLogFile() (*os.File, error) {
-	if fi, err := os.Stat(PATH); err == nil {
-		if !fi.IsDir() {
-			return nil, fmt.Errorf("open %s: not a directory", PATH)
-		}
-	} else if os.IsNotExist(err) {
-		if err := os.MkdirAll(PATH, 0766); err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, err
-	}
-
-	current := time.Now().Format("2006-01-02_15.04.05")
-	logfile, err := os.OpenFile(PATH+current+"_LOG.log", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return nil, err
-	}
-	return logfile, nil
 }
 
 func Info(msg ...interface{}) {

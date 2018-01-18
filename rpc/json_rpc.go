@@ -11,11 +11,7 @@ import (
 	"ELAClient/common/config"
 )
 
-var rpcAddress = getRPCAddress()
-
-func getRPCAddress() string {
-	return "http://" + config.Config().IpAddress + ":" + strconv.Itoa(config.Config().HttpJsonPort)
-}
+var url string
 
 func GetBlockCount() (uint32, error) {
 	result, err := CallAndUnmarshal("getblockcount")
@@ -37,6 +33,9 @@ func GetBlockByHeight(height uint32) (*BlockInfo, error) {
 }
 
 func Call(method string, params ...interface{}) ([]byte, error) {
+	if url == "" {
+		url = "http://" + config.Config().IpAddress + ":" + strconv.Itoa(config.Config().HttpJsonPort)
+	}
 	data, err := json.Marshal(map[string]interface{}{
 		"method": method,
 		"id":     88888,
@@ -47,7 +46,7 @@ func Call(method string, params ...interface{}) ([]byte, error) {
 	}
 
 	//log.Trace("RPC call:", string(data))
-	resp, err := http.Post(rpcAddress, "application/json", strings.NewReader(string(data)))
+	resp, err := http.Post(url, "application/json", strings.NewReader(string(data)))
 	if err != nil {
 		fmt.Printf("POST requset: %v\n", err)
 		return nil, err
