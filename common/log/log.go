@@ -1,12 +1,10 @@
 package log
 
 import (
-	"io"
 	"os"
 	"log"
 	"fmt"
 	"time"
-	"ELAClient/common/config"
 )
 
 const (
@@ -22,17 +20,7 @@ const (
 var logger *log.Logger
 
 func InitLog() {
-	writers := []io.Writer{}
-	if config.Config().LogToFile {
-		logFile, err := OpenLogFile()
-		if err != nil {
-			fmt.Println("error: open log file failed")
-			os.Exit(1)
-		}
-		writers = append(writers, logFile)
-	}
-	writers = append(writers, os.Stdout)
-	logger = log.New(io.MultiWriter(writers...), "", log.Ldate|log.Lmicroseconds)
+	logger = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
 }
 
 func OpenLogFile() (*os.File, error) {

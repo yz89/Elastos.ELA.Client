@@ -14,7 +14,6 @@ const (
 var config *Configuration // The single instance of config
 
 type Configuration struct {
-	LogToFile    bool   `json:LogToFile`
 	IpAddress    string `json:IpAddress`
 	HttpJsonPort int    `json:"HttpJsonPort"`
 }
@@ -37,7 +36,6 @@ func (config *Configuration) readConfigFile() error {
 func Config() *Configuration {
 	if config == nil {
 		config = &Configuration{
-			false,
 			"localhost",
 			20336,
 		}
