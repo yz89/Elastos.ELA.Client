@@ -269,18 +269,19 @@ func (wallet *WalletImpl) signStandardTransaction(password []byte, txn *tx.Trans
 
 func (wallet *WalletImpl) signMultiSignTransaction(password []byte, txn *tx.Transaction) (*tx.Transaction, error) {
 	// Check if current user is a valid signer
-	var isSigner bool
+	var signerIndex = -1
 	programHashes, err := txn.GetMultiSignSigners()
 	if err != nil {
 		return nil, err
 	}
 	userProgramHash := wallet.Keystore.GetProgramHash()
-	for _, programHash := range programHashes {
+	for i, programHash := range programHashes {
 		if *userProgramHash == *programHash {
-			isSigner = true
+			signerIndex = i
+			break
 		}
 	}
-	if !isSigner {
+	if signerIndex == -1 {
 		return nil, errors.New("[Wallet], Invalid multi sign signer")
 	}
 	// Sign transaction
@@ -289,7 +290,10 @@ func (wallet *WalletImpl) signMultiSignTransaction(password []byte, txn *tx.Tran
 		return nil, err
 	}
 	// Append signature
-	txn.AppendSignature(signedTx)
+	err = txn.AppendSignature(signerIndex, signedTx)
+	if err != nil {
+		return nil, err
+	}
 
 	return txn, nil
 }
