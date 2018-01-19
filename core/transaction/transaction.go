@@ -314,7 +314,7 @@ func (tx *Transaction) GetProgramHashes() ([]*Uint168, error) {
 	}
 	for _, attribute := range tx.Attributes {
 		if attribute.Usage == Script {
-			dataHash, err := Uint160ParseFromBytes(attribute.Data)
+			dataHash, err := Uint168FromBytes(attribute.Data)
 			if err != nil {
 				return nil, errors.New("[Transaction], GetProgramHashes err.")
 			}
@@ -387,7 +387,7 @@ func (tx *Transaction) GetStandardSigner() (*Uint168, error) {
 	script := make([]byte, PublicKeyScriptLength)
 	copy(script, code[:PublicKeyScriptLength])
 
-	return ToScriptHash(script, SignTypeSingle)
+	return ToProgramHash(script)
 }
 
 func (tx *Transaction) GetMultiSignSigners() ([]*Uint168, error) {
@@ -399,7 +399,7 @@ func (tx *Transaction) GetMultiSignSigners() ([]*Uint168, error) {
 	var signers []*Uint168
 	for _, script := range scripts {
 		script = append(script, CHECKSIG)
-		hash, _ := ToScriptHash(script, SignTypeSingle)
+		hash, _ := ToProgramHash(script)
 		signers = append(signers, hash)
 	}
 

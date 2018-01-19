@@ -1,40 +1,11 @@
 package common
 
 import (
-	"io"
 	"os"
 	"bytes"
-	"errors"
 	"encoding/hex"
-	"crypto/sha256"
 	"encoding/binary"
-
-	"golang.org/x/crypto/ripemd160"
 )
-
-const (
-	SignTypeSingle = 1
-	SignTypeMulti  = 2
-)
-
-func ToScriptHash(code []byte, signType int) (*Uint168, error) {
-	temp := sha256.Sum256(code)
-	md := ripemd160.New()
-	io.WriteString(md, string(temp[:]))
-	f := md.Sum(nil)
-
-	if signType == SignTypeSingle {
-		f = append([]byte{33}, f...)
-	} else if signType == SignTypeMulti {
-		f = append([]byte{18}, f...)
-	}
-
-	hash, err := Uint160ParseFromBytes(f)
-	if err != nil {
-		return nil, errors.New("[Common] ,ToScriptHash error")
-	}
-	return hash, nil
-}
 
 func BytesToInt16(b []byte) int16 {
 	bytesBuffer := bytes.NewBuffer(b)

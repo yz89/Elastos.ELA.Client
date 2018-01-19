@@ -1,12 +1,13 @@
 package mining
 
 import (
-	"ELAClient/rpc"
+	"fmt"
 	"errors"
+	"strconv"
+
+	"ELAClient/rpc"
 
 	"github.com/urfave/cli"
-	"strconv"
-	"fmt"
 )
 
 func miningAction(c *cli.Context) error {

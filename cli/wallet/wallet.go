@@ -168,10 +168,19 @@ func walletAction(context *cli.Context) {
 	}
 
 	// add account
-	if pubKeysStr := context.String("addaccount"); pubKeysStr != "" {
-		if err := addAccount(wallet, pubKeysStr); err != nil {
-			fmt.Println("error: add account failed, ", err)
+	if pubKeyStr := context.String("addaccount"); pubKeyStr != "" {
+		if err := addAccount(wallet, pubKeyStr); err != nil {
+			fmt.Println("error: add standard account failed, ", err)
 			cli.ShowCommandHelpAndExit(context, "addaccount", 5)
+		}
+		return
+	}
+
+	// add multi sign account
+	if pubKeysStr := context.String("addmultisignaccount"); pubKeysStr != "" {
+		if err := addMultiSignAccount(context, wallet, pubKeysStr); err != nil {
+			fmt.Println("error: add multi sign account failed, ", err)
+			cli.ShowCommandHelpAndExit(context, "addmultisignaccount", 5)
 		}
 		return
 	}
@@ -262,9 +271,19 @@ func NewCommand() *cli.Command {
 				Usage: "reset wallet data store",
 			},
 			cli.StringFlag{
-				Name: "addaccount",
-				Usage: "add a standard account with it's public key" +
-					", or add a multi-sign account using signers public keys",
+				Name:  "addaccount",
+				Usage: "add a standard account with it's public key",
+			},
+			cli.StringFlag{
+				Name: "addmultisignaccount",
+				Usage: "add a multi-sign account with signers public keys\n" +
+					"\tuse -m to specify how many signatures are needed to create a valid transaction\n" +
+					"\tby default M is public keys / 2 + 1, witch means greater than half",
+			},
+			cli.IntFlag{
+				Name:  "m",
+				Usage: "the M value to specify how many signatures are needed to create a valid transaction",
+				Value: 0,
 			},
 			cli.StringFlag{
 				Name:  "deleteaccount",

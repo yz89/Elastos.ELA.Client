@@ -94,9 +94,9 @@ func (self *Uint168) ToAddress() (string, error) {
 	return string(encoded), nil
 }
 
-func Uint160ParseFromBytes(f []byte) (*Uint168, error) {
+func Uint168FromBytes(f []byte) (*Uint168, error) {
 	if len(f) != UINT168SIZE {
-		return nil, errors.New("[Common]: Uint160ParseFromBytes err, len != 21")
+		return nil, errors.New("[Common]: Uint168FromBytes err, len != 21")
 	}
 
 	var hash = &Uint168{}
@@ -107,7 +107,7 @@ func Uint160ParseFromBytes(f []byte) (*Uint168, error) {
 	return hash, nil
 }
 
-func ToProgramHash(address string) (*Uint168, error) {
+func Uint168FromAddress(address string) (*Uint168, error) {
 	encoding := base58.BitcoinEncoding
 
 	decoded, err := encoding.Decode([]byte(address))
@@ -117,7 +117,7 @@ func ToProgramHash(address string) (*Uint168, error) {
 
 	x, _ := new(big.Int).SetString(string(decoded), 10)
 
-	ph, err := Uint160ParseFromBytes(x.Bytes()[0:21])
+	ph, err := Uint168FromBytes(x.Bytes()[0:21])
 	if err != nil {
 		return nil, err
 	}

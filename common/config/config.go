@@ -16,6 +16,7 @@ var config *Configuration // The single instance of config
 type Configuration struct {
 	IpAddress    string `json:IpAddress`
 	HttpJsonPort int    `json:"HttpJsonPort"`
+	HttpRestPort int    `json:"HttpRestPort"`
 }
 
 func (config *Configuration) readConfigFile() error {
@@ -38,6 +39,7 @@ func Config() *Configuration {
 		config = &Configuration{
 			"localhost",
 			20336,
+			20334,
 		}
 		err := config.readConfigFile()
 		if err != nil {

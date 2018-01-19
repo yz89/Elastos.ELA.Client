@@ -31,7 +31,8 @@ type Wallet interface {
 	OpenKeystore(name string, password []byte) error
 	ChangePassword(oldPassword, newPassword []byte) error
 
-	AddAccount(publicKey ...*crypto.PublicKey) (*Uint168, error)
+	AddStandardAccount(publicKey *crypto.PublicKey) (*Uint168, error)
+	AddMultiSignAccount(M int, publicKey ...*crypto.PublicKey) (*Uint168, error)
 
 	CreateTransaction(fromAddress, toAddress string, amount, fee *Fixed64) (*tx.Transaction, error)
 	CreateLockedTransaction(fromAddress, toAddress string, amount, fee *Fixed64, lockedUntil uint32) (*tx.Transaction, error)
@@ -93,33 +94,42 @@ func (wallet *WalletImpl) OpenKeystore(name string, password []byte) error {
 	return nil
 }
 
-func (wallet *WalletImpl) AddAccount(publicKeys ...*crypto.PublicKey) (*Uint168, error) {
-	var err error
-	var signType int
-	var redeemScript []byte
-
-	if len(publicKeys) == 1 { // Standard address
-		signType = SignTypeSingle
-		redeemScript, err = CreateStandardRedeemScript(publicKeys[0])
-	} else { // Multi sign address
-		signType = SignTypeMulti
-		redeemScript, err = CreateMultiSignRedeemScript(publicKeys)
-	}
+func (wallet *WalletImpl) AddStandardAccount(publicKey *crypto.PublicKey) (*Uint168, error) {
+	redeemScript, err := tx.CreateStandardRedeemScript(publicKey)
 	if err != nil {
-		return nil, errors.New("[Wallet], CreateRedeemScript failed")
+		return nil, errors.New("[Wallet], CreateStandardRedeemScript failed")
 	}
 
-	scriptHash, err := ToScriptHash(redeemScript, signType)
+	programHash, err := tx.ToProgramHash(redeemScript)
 	if err != nil {
-		return nil, errors.New("[Wallet], CreateAddress failed")
+		return nil, errors.New("[Wallet], CreateStandardAddress failed")
 	}
 
-	err = wallet.AddAddress(scriptHash, redeemScript)
+	err = wallet.AddAddress(programHash, redeemScript)
 	if err != nil {
 		return nil, err
 	}
 
-	return scriptHash, nil
+	return programHash, nil
+}
+
+func (wallet *WalletImpl) AddMultiSignAccount(M int, publicKeys ...*crypto.PublicKey) (*Uint168, error) {
+	redeemScript, err := tx.CreateMultiSignRedeemScript(M, publicKeys)
+	if err != nil {
+		return nil, errors.New("[Wallet], CreateStandardRedeemScript failed")
+	}
+
+	programHash, err := tx.ToProgramHash(redeemScript)
+	if err != nil {
+		return nil, errors.New("[Wallet], CreateMultiSignAddress failed")
+	}
+
+	err = wallet.AddAddress(programHash, redeemScript)
+	if err != nil {
+		return nil, err
+	}
+
+	return programHash, nil
 }
 
 func (wallet *WalletImpl) CreateTransaction(fromAddress, toAddress string, amount, fee *Fixed64) (*tx.Transaction, error) {
@@ -147,7 +157,7 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 	wallet.SyncChainData()
 
 	// Check if from address is valid
-	spender, err := ToProgramHash(fromAddress)
+	spender, err := Uint168FromAddress(fromAddress)
 	if err != nil {
 		return nil, errors.New("[Wallet], Invalid spender address")
 	}
@@ -157,7 +167,7 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 	totalOutputAmount += *fee          // Add transaction fee
 
 	for _, output := range outputs {
-		receiver, err := ToProgramHash(output.Address)
+		receiver, err := Uint168FromAddress(output.Address)
 		if err != nil {
 			return nil, errors.New("[Wallet], Invalid receiver address")
 		}
