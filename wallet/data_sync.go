@@ -1,7 +1,7 @@
 package wallet
 
 import (
-	"ELAClient/rpc"
+	. "ELAClient/rpc"
 	. "ELAClient/common"
 	tx "ELAClient/core/transaction"
 	"fmt"
@@ -31,7 +31,7 @@ func (sync *DataSyncImpl) SyncChainData() {
 
 		fmt.Print("Synchronize blocks: ")
 		for {
-			block, err := rpc.GetBlockByHeight(currentHeight)
+			block, err := GetBlockByHeight(currentHeight)
 			if err != nil {
 				break
 			}
@@ -52,7 +52,7 @@ func (sync *DataSyncImpl) SyncChainData() {
 
 func (sync *DataSyncImpl) needSyncBlocks() (uint32, bool) {
 
-	chainHeight, err := rpc.GetCurrentHeight()
+	chainHeight, err := GetCurrentHeight()
 	if err != nil {
 		return 0, false
 	}
@@ -75,7 +75,7 @@ func (sync *DataSyncImpl) containAddress(address string) (*Address, bool) {
 	return nil, false
 }
 
-func (sync *DataSyncImpl) processBlock(block *rpc.BlockInfo) {
+func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
 	// Add UTXO to wallet address from transaction outputs
 	for _, txn := range block.Transactions {
 		for index, output := range txn.Outputs {

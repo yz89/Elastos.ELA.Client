@@ -16,7 +16,7 @@ import (
 秘钥数据库，存储IV，MasterKey，PasswordHash地址公钥私钥，使用JsonFile存储
 */
 const (
-	KeystoreVersion  = "1.0"
+	KeystoreVersion = "1.0"
 )
 
 type Keystore interface {
@@ -137,14 +137,14 @@ func (store *KeystoreImpl) init(privateKey []byte, publicKey *crypto.PublicKey) 
 	// Set public key
 	store.publicKey = publicKey
 
-	signatureRedeemScript, err := CreateStandardRedeemScript(publicKey)
+	signatureRedeemScript, err := tx.CreateStandardRedeemScript(publicKey)
 	if err != nil {
 		return err
 	}
 	// Set redeem script
 	store.redeemScript = signatureRedeemScript
 
-	programHash, err := ToScriptHash(signatureRedeemScript, SignTypeSingle)
+	programHash, err := tx.ToProgramHash(signatureRedeemScript)
 	if err != nil {
 		return err
 	}

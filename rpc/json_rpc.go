@@ -38,7 +38,7 @@ func GetBlockByHeight(height uint32) (*BlockInfo, error) {
 	return block, nil
 }
 
-func Call(method string, params ...interface{}) ([]byte, error) {
+func Call(method string, params map[string]string) ([]byte, error) {
 	if url == "" {
 		url = "http://" + config.Config().IpAddress + ":" + strconv.Itoa(config.Config().HttpJsonPort)
 	}

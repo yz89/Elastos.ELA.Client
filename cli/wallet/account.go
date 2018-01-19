@@ -8,22 +8,54 @@ import (
 	"io/ioutil"
 
 	"ELAClient/crypto"
-	. "ELAClient/common"
 	. "ELAClient/wallet"
+	. "ELAClient/common"
+
+	"github.com/urfave/cli"
 )
 
 func addAccount(wallet Wallet, content string) error {
+	publicKey, err := getPublicKey(content)
+	if err != nil {
+		return err
+	}
+
+	programHash, err := wallet.AddStandardAccount(publicKey)
+	if err != nil {
+		return err
+	}
+	// When add a new address, reset stored height to trigger synchronize blocks.
+	wallet.CurrentHeight(ResetHeightCode)
+
+	address, err := programHash.ToAddress()
+	if err != nil {
+		return err
+	}
+	fmt.Println(address)
+	return nil
+}
+
+func addMultiSignAccount(context *cli.Context, wallet Wallet, content string) error {
 	// Get address content from file or cli input
 	publicKeys, err := getPublicKeys(content)
 	if err != nil {
 		return err
 	}
 
-	if len(publicKeys) > 1 && len(publicKeys) < MinMultiSignKeys {
+	if len(publicKeys) < MinMultiSignKeys {
 		return errors.New(fmt.Sprint("multi sign account require at lest ", MinMultiSignKeys, " public keys"))
 	}
 
-	_, err = wallet.AddAccount(publicKeys...)
+	// Get M value
+	M := context.Int("m")
+	if M == 0 { // Use default M greater than half
+		M = len(publicKeys)/2 + 1
+	}
+	if M < len(publicKeys)/2+1 || M > len(publicKeys) {
+		return errors.New("M must be greater than half number of public keys, less than number of public keys")
+	}
+
+	programHash, err := wallet.AddMultiSignAccount(M, publicKeys...)
 	if err != nil {
 		return err
 	}
@@ -31,7 +63,45 @@ func addAccount(wallet Wallet, content string) error {
 	// When add a new address, reset stored height to trigger synchronize blocks.
 	wallet.CurrentHeight(ResetHeightCode)
 
-	return listBalanceInfo(wallet)
+	address, err := programHash.ToAddress()
+	if err != nil {
+		return err
+	}
+	fmt.Println(address)
+	return nil
+}
+
+func getPublicKey(content string) (*crypto.PublicKey, error) {
+	// Content can not be empty
+	if content == "" {
+		return nil, errors.New("content should be the public key file path or public key string")
+	}
+
+	// Get public key string
+	if _, err := os.Stat(content); err == nil { // if content is a file
+
+		file, err := os.OpenFile(content, os.O_RDONLY, 0666)
+		if err != nil {
+			return nil, errors.New("open public key file failed")
+		}
+		rawData, err := ioutil.ReadAll(file)
+		if err != nil {
+			return nil, errors.New("read public key file failed")
+		}
+		content = string(rawData)
+	}
+
+	// Get public key
+	keyBytes, err := HexStringToBytes(strings.TrimSpace(content))
+	if err != nil {
+		return nil, err
+	}
+	publicKey, err := crypto.DecodePoint(keyBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return publicKey, nil
 }
 
 func getPublicKeys(content string) ([]*crypto.PublicKey, error) {
@@ -85,7 +155,7 @@ func getPublicKeys(content string) ([]*crypto.PublicKey, error) {
 }
 
 func deleteAccount(wallet Wallet, address string) error {
-	programHash, err := ToProgramHash(address)
+	programHash, err := Uint168FromAddress(address)
 	if err != nil {
 		return err
 	}
@@ -95,5 +165,6 @@ func deleteAccount(wallet Wallet, address string) error {
 		return err
 	}
 
-	return listBalanceInfo(wallet)
+	fmt.Println(address)
+	return nil
 }

@@ -272,7 +272,7 @@ func (store *DataStoreImpl) GetAddresses() ([]*Address, error) {
 			log.Error("Get address scan row:", err)
 			return nil, err
 		}
-		programHash, err := Uint160ParseFromBytes(programHashBytes)
+		programHash, err := Uint168FromBytes(programHashBytes)
 		if err != nil {
 			return nil, err
 		}
