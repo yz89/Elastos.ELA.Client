@@ -3,6 +3,7 @@ package password
 import (
 	"os"
 	"fmt"
+
 	"github.com/howeyc/gopass"
 )
 

@@ -22,9 +22,9 @@ func ToProgramHash(code []byte) (*Uint168, error) {
 	f := md.Sum(nil)
 
 	signType := code[len(code)-1]
-	if signType == CHECKSIG {
+	if signType == STANDARD {
 		f = append([]byte{33}, f...)
-	} else if signType == CHECKMULTISIG {
+	} else if signType == MULTISIG {
 		f = append([]byte{18}, f...)
 	}
 
@@ -39,7 +39,7 @@ func CreateStandardRedeemScript(publicKey *crypto.PublicKey) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	buf.WriteByte(byte(len(content)))
 	buf.Write(content)
-	buf.WriteByte(byte(CHECKSIG))
+	buf.WriteByte(byte(STANDARD))
 
 	return buf.Bytes(), nil
 }
@@ -67,7 +67,7 @@ func CreateMultiSignRedeemScript(M int, publicKeys []*crypto.PublicKey) ([]byte,
 	N := len(publicKeys)
 	opCode = OpCode(byte(PUSH1) + byte(N) - 1)
 	buf.WriteByte(byte(opCode))
-	buf.WriteByte(CHECKMULTISIG)
+	buf.WriteByte(MULTISIG)
 
 	return buf.Bytes(), nil
 }
