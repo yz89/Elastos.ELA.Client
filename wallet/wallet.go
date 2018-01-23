@@ -233,7 +233,7 @@ func (wallet *WalletImpl) Sign(name string, password []byte, txn *tx.Transaction
 		return nil, err
 	}
 	// Look up transaction type
-	if signType == tx.CHECKSIG {
+	if signType == tx.STANDARD {
 
 		// Sign single transaction
 		txn, err = wallet.signStandardTransaction(password, txn)
@@ -241,7 +241,7 @@ func (wallet *WalletImpl) Sign(name string, password []byte, txn *tx.Transaction
 			return nil, err
 		}
 
-	} else if signType == tx.CHECKMULTISIG {
+	} else if signType == tx.MULTISIG {
 
 		// Sign multi sign transaction
 		txn, err = wallet.signMultiSignTransaction(password, txn)

@@ -3,7 +3,6 @@ package transaction
 import (
 	"io"
 	"fmt"
-	"sort"
 	"bytes"
 	"errors"
 	"crypto/sha256"
@@ -28,8 +27,8 @@ const (
 
 	PUSH1 = 0x51
 
-	CHECKSIG      = 0xAC
-	CHECKMULTISIG = 0xAE
+	STANDARD = 0xAC
+	MULTISIG = 0xAE
 )
 
 func (self TransactionType) Name() string {
@@ -51,9 +50,7 @@ func (self TransactionType) Name() string {
 
 const (
 	InvalidTransactionSize = -1
-)
 
-const (
 	// encoded public key length 0x21 || encoded public key (33 bytes) || OP_CHECKSIG(0xac)
 	PublicKeyScriptLength = 35
 
@@ -300,40 +297,6 @@ func (tx *Transaction) GetSize() int {
 	return buffer.Len()
 }
 
-func (tx *Transaction) GetProgramHashes() ([]*Uint168, error) {
-	if tx == nil {
-		return nil, errors.New("[Transaction],GetProgramHashes transaction is nil.")
-	}
-	hashs := []*Uint168{}
-	uniqHashes := []*Uint168{}
-	// add inputUTXO's transaction
-	referenceWithUTXO_Output := tx.Outputs
-	for _, output := range referenceWithUTXO_Output {
-		programHash := output.ProgramHash
-		hashs = append(hashs, &programHash)
-	}
-	for _, attribute := range tx.Attributes {
-		if attribute.Usage == Script {
-			dataHash, err := Uint168FromBytes(attribute.Data)
-			if err != nil {
-				return nil, errors.New("[Transaction], GetProgramHashes err.")
-			}
-			hashs = append(hashs, dataHash)
-		}
-	}
-
-	//remove dupilicated hashes
-	uniq := make(map[*Uint168]bool)
-	for _, v := range hashs {
-		uniq[v] = true
-	}
-	for k := range uniq {
-		uniqHashes = append(uniqHashes, k)
-	}
-	sort.Sort(byProgramHashes(uniqHashes))
-	return uniqHashes, nil
-}
-
 func (tx *Transaction) SetPrograms(programs []*program.Program) {
 	tx.Programs = programs
 }
@@ -357,15 +320,6 @@ func (tx *Transaction) IsCoinBaseTx() bool {
 	return tx.TxType == CoinBase
 }
 
-func (tx *Transaction) SetHash(hash Uint256) {
-	tx.hash = &hash
-}
-
-func (tx *Transaction) Verify() error {
-	//TODO: Verify()
-	return nil
-}
-
 func (tx *Transaction) GetTransactionCode() ([]byte, error) {
 	code := tx.GetPrograms()[0].Code
 	if code == nil {
@@ -379,10 +333,10 @@ func (tx *Transaction) GetStandardSigner() (*Uint168, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(code) != PublicKeyScriptLength || code[len(code)-1] != CHECKSIG {
+	if len(code) != PublicKeyScriptLength || code[len(code)-1] != STANDARD {
 		return nil, errors.New("not a valid standard transaction code, length not match")
 	}
-	// remove last byte CHECKSIG
+	// remove last byte STANDARD
 	code = code[:len(code)-1]
 	script := make([]byte, PublicKeyScriptLength)
 	copy(script, code[:PublicKeyScriptLength])
@@ -398,7 +352,7 @@ func (tx *Transaction) GetMultiSignSigners() ([]*Uint168, error) {
 
 	var signers []*Uint168
 	for _, script := range scripts {
-		script = append(script, CHECKSIG)
+		script = append(script, STANDARD)
 		hash, _ := ToProgramHash(script)
 		signers = append(signers, hash)
 	}
@@ -411,10 +365,10 @@ func (tx *Transaction) GetMultiSignPublicKeys() ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(code) < MinMultiSignCodeLength || code[len(code)-1] != CHECKMULTISIG {
+	if len(code) < MinMultiSignCodeLength || code[len(code)-1] != MULTISIG {
 		return nil, errors.New("not a valid multi sign transaction code, length not enough")
 	}
-	// remove last byte CHECKMULTISIG
+	// remove last byte MULTISIG
 	code = code[:len(code)-1]
 	// remove m
 	code = code[1:]
@@ -460,11 +414,11 @@ func (tx *Transaction) GetSignStatus() (haveSign, needSign int, err error) {
 		return -1, -1, err
 	}
 
-	if signType == CHECKSIG {
+	if signType == STANDARD {
 		signed := len(tx.Programs[0].Parameter) / SignatureScriptLength
 		return signed, 1, nil
 
-	} else if signType == CHECKMULTISIG {
+	} else if signType == MULTISIG {
 
 		haveSign = len(tx.Programs[0].Parameter) / SignatureScriptLength
 
@@ -517,16 +471,4 @@ func (tx *Transaction) AppendSignature(signerIndex int, signature []byte) error 
 	tx.Programs[0].Parameter = buf.Bytes()
 
 	return nil
-}
-
-type byProgramHashes []*Uint168
-
-func (a byProgramHashes) Len() int      { return len(a) }
-func (a byProgramHashes) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a byProgramHashes) Less(i, j int) bool {
-	if a[i].CompareTo(a[j]) > 0 {
-		return false
-	} else {
-		return true
-	}
 }
