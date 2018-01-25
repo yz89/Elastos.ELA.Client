@@ -65,16 +65,6 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	if height := c.Uint("getblockhash"); height >= 0 {
-		result, err := rpc.CallAndUnmarshal("getblockhash", height)
-		if err != nil {
-			fmt.Println("error: get block hash failed, ", err)
-			return err
-		}
-		fmt.Println(result.(string))
-		return nil
-	}
-
 	if param := c.String("getblock"); param != "" {
 		height, err := strconv.ParseInt(param, 10, 64)
 
@@ -89,6 +79,16 @@ func infoAction(c *cli.Context) error {
 			return err
 		}
 		fmt.Println(result)
+		return nil
+	}
+
+	if height := c.Uint("getblockhash"); height >= 0 {
+		result, err := rpc.CallAndUnmarshal("getblockhash", height)
+		if err != nil {
+			fmt.Println("error: get block hash failed, ", err)
+			return err
+		}
+		fmt.Println(result.(string))
 		return nil
 	}
 
