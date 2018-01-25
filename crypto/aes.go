@@ -10,14 +10,12 @@ import (
 )
 
 func ToAesKey(pwd []byte) []byte {
-	pwdhash := sha256.Sum256(pwd)
-	pwdhash2 := sha256.Sum256(pwdhash[:])
+	hash := sha256.Sum256(pwd)
+	double := sha256.Sum256(hash[:])
 
-	// Fixme clean the password buffer
-	// ClearBytes(pwd,len(pwd))
-	ClearBytes(pwdhash[:], 32)
+	ClearBytes(hash[:], 32)
 
-	return pwdhash2[:]
+	return double[:]
 }
 
 func AesEncrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
@@ -25,17 +23,15 @@ func AesEncrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
 	if err != nil {
 		return nil, errors.New("invalid decrypt key")
 	}
-	//blockSize := block.BlockSize()
-	//plaintext = PKCS5Padding(plaintext, blockSize)
 	blockMode := cipher.NewCBCEncrypter(block, iv)
 
-	ciphertext := make([]byte, len(plaintext))
-	blockMode.CryptBlocks(ciphertext, plaintext)
+	cipherText := make([]byte, len(plaintext))
+	blockMode.CryptBlocks(cipherText, plaintext)
 
-	return ciphertext, nil
+	return cipherText, nil
 }
 
-func AesDecrypt(ciphertext []byte, key []byte, iv []byte) ([]byte, error) {
+func AesDecrypt(cipherText []byte, key []byte, iv []byte) ([]byte, error) {
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -44,19 +40,18 @@ func AesDecrypt(ciphertext []byte, key []byte, iv []byte) ([]byte, error) {
 
 	blockSize := block.BlockSize()
 
-	if len(ciphertext) < blockSize {
-		return nil, errors.New("ciphertext too short")
+	if len(cipherText) < blockSize {
+		return nil, errors.New("cipherText too short")
 	}
 
-	if len(ciphertext)%blockSize != 0 {
-		return nil, errors.New("ciphertext is not a multiple of the block size")
+	if len(cipherText)%blockSize != 0 {
+		return nil, errors.New("cipherText is not a multiple of the block size")
 	}
 
 	blockModel := cipher.NewCBCDecrypter(block, iv)
 
-	plaintext := make([]byte, len(ciphertext))
-	blockModel.CryptBlocks(plaintext, ciphertext)
-	//plaintext = PKCS5UnPadding(plaintext)
+	plaintext := make([]byte, len(cipherText))
+	blockModel.CryptBlocks(plaintext, cipherText)
 
 	return plaintext, nil
 }
