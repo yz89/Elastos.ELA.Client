@@ -68,17 +68,17 @@ func infoAction(c *cli.Context) error {
 	if param := c.String("getblock"); param != "" {
 		height, err := strconv.ParseInt(param, 10, 64)
 
-		var result interface{}
+		var result []byte
 		if err == nil {
-			result, err = rpc.CallAndUnmarshal("getblock", height)
+			result, err = rpc.Call("getblock", height)
 		} else {
-			result, err = rpc.CallAndUnmarshal("getblock", param)
+			result, err = rpc.Call("getblock", param)
 		}
 		if err != nil {
 			fmt.Println("error: get block failed, ", err)
 			return err
 		}
-		fmt.Println(result)
+		fmt.Println(string(result))
 		return nil
 	}
 

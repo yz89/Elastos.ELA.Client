@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 
 	"ELAClient/common/config"
+	"bytes"
 )
 
 var url string
@@ -39,7 +40,7 @@ func Call(method string, params ...interface{}) ([]byte, error) {
 	data, err := json.Marshal(map[string]interface{}{
 		"method": method,
 		"id":     88888,
-		"params": params,
+		"params": formatParam(params...),
 	})
 	if err != nil {
 		return nil, err
@@ -57,13 +58,15 @@ func Call(method string, params ...interface{}) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	body = formatResponse(body)
 	//log.Trace("RPC resp:", string(body))
 
 	return body, nil
 }
 
 func CallAndUnmarshal(method string, params ...interface{}) (interface{}, error) {
-	body, err := Call(method, format(params...)...)
+	body, err := Call(method, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,11 +83,20 @@ func CallAndUnmarshal(method string, params ...interface{}) (interface{}, error)
 	return resp["result"], nil
 }
 
-func format(params ...interface{}) []interface{} {
+func formatParam(params ...interface{}) []interface{} {
 	if params == nil {
 		return []interface{}{}
 	}
 	return params
+}
+
+func formatResponse(body []byte) []byte {
+	buf := new(bytes.Buffer)
+	err := json.Indent(buf, body, "", "\t")
+	if err != nil {
+		return body
+	}
+	return buf.Bytes()
 }
 
 func unmarshal(result interface{}, target interface{}) error {
