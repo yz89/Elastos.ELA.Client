@@ -14,6 +14,7 @@ import (
 	tx "ELAClient/core/transaction"
 	pg "ELAClient/core/contract/program"
 	"ELAClient/core/transaction/payload"
+	"fmt"
 )
 
 var SystemAssetId = getSystemAssetId()
@@ -169,7 +170,7 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 	for _, output := range outputs {
 		receiver, err := Uint168FromAddress(output.Address)
 		if err != nil {
-			return nil, errors.New("[Wallet], Invalid receiver address")
+			return nil, errors.New(fmt.Sprint("[Wallet], Invalid receiver address:", output.Address))
 		}
 		txOutput := &tx.TxOutput{
 			AssetID:     SystemAssetId,

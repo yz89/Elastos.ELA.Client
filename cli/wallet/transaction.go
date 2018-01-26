@@ -106,7 +106,7 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 		}
 		address := strings.TrimSpace(columns[0])
 		multiOutput = append(multiOutput, &walt.Output{address, amount})
-		log.Trace("Multi output address:", address, ", amount:", amountStr)
+		log.Trace("Multi output address:", address, ", amount:", amount.String())
 	}
 
 	lockStr := c.String("lock")
