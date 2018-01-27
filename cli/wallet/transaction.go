@@ -173,16 +173,6 @@ func sendTransaction(context *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	rawData, err := HexStringToBytes(content)
-	if err != nil {
-		return errors.New("decode transaction content failed")
-	}
-
-	var txn tx.Transaction
-	err = txn.Deserialize(bytes.NewReader(rawData))
-	if err != nil {
-		return errors.New("deserialize transaction failed")
-	}
 
 	result, err := rpc.CallAndUnmarshal("sendrawtransaction", content)
 	if err != nil {
