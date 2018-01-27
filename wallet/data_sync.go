@@ -1,10 +1,10 @@
 package wallet
 
 import (
+	"fmt"
 	. "ELAClient/rpc"
 	. "ELAClient/common"
 	tx "ELAClient/core/transaction"
-	"fmt"
 )
 
 type DataSync interface {
@@ -27,10 +27,9 @@ func (sync *DataSyncImpl) SyncChainData() {
 	// Get the addresses in this wallet
 	sync.addresses, _ = sync.GetAddresses()
 
-	if currentHeight, needSync := sync.needSyncBlocks(); needSync {
+	for chainHeight, currentHeight, needSync := sync.needSyncBlocks(); needSync; {
 
-		fmt.Print("Synchronize blocks: ")
-		for {
+		for currentHeight < chainHeight {
 			block, err := GetBlockByHeight(currentHeight)
 			if err != nil {
 				break
@@ -38,32 +37,28 @@ func (sync *DataSyncImpl) SyncChainData() {
 			sync.processBlock(block)
 
 			// Update wallet height
-			sync.CurrentHeight(block.BlockData.Height + 1)
+			currentHeight = sync.CurrentHeight(block.BlockData.Height + 1)
 
 			fmt.Print(">")
-
-			if currentHeight, needSync = sync.needSyncBlocks(); !needSync {
-				fmt.Println()
-				break
-			}
 		}
 	}
+	fmt.Print("\n")
 }
 
-func (sync *DataSyncImpl) needSyncBlocks() (uint32, bool) {
+func (sync *DataSyncImpl) needSyncBlocks() (uint32, uint32, bool) {
 
 	chainHeight, err := GetCurrentHeight()
 	if err != nil {
-		return 0, false
+		return 0, 0, false
 	}
 
 	currentHeight := sync.CurrentHeight(QueryHeightCode)
 
 	if currentHeight >= chainHeight {
-		return currentHeight, false
+		return chainHeight, currentHeight, false
 	}
 
-	return currentHeight, true
+	return chainHeight, currentHeight, true
 }
 
 func (sync *DataSyncImpl) containAddress(address string) (*Address, bool) {
