@@ -21,15 +21,6 @@ import (
 
 func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 
-	from := c.String("from")
-	if from == "" {
-		addresses, err := wallet.GetAddresses()
-		if err != nil || len(addresses) == 0 {
-			return errors.New("can not get default address")
-		}
-		from = addresses[0].Address
-	}
-
 	feeStr := c.String("fee")
 	if feeStr == "" {
 		return errors.New("use --fee to specify transfer fee")
@@ -38,6 +29,14 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 	fee, err := StringToFixed64(feeStr)
 	if err != nil {
 		return errors.New("invalid transaction fee")
+	}
+
+	from := c.String("from")
+	if from == "" {
+		from, err = selectAddress(wallet)
+		if err != nil {
+			return err
+		}
 	}
 
 	multiOutput := c.String("file")
