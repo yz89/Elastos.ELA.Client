@@ -19,7 +19,7 @@ const (
 
 func printLine() {
 	for i := 0; i < 80; i++ {
-		fmt.Print("=")
+		fmt.Print("-")
 	}
 	fmt.Println()
 }
@@ -297,14 +297,14 @@ func NewCommand() *cli.Command {
 				Name: "transaction, t",
 				Usage: "use [create, sign, send], to create, sign or send a transaction\n" +
 					"\tcreate:\n" +
-					"\t\tuse [--from] --to --amount --fee [--lock], or [--from] --file --fee [--lock]\n" +
+					"\t\tuse --to --amount --fee [--lock], or --file --fee [--lock]\n" +
 					"\t\tto create a standard transaction, or multi output transaction\n" +
 					"\tsign, send:\n" +
 					"\t\tuse --content to specify the transaction file path or it's content\n",
 			},
 			cli.StringFlag{
 				Name:  "from",
-				Usage: "the spend address of the transaction, if not specified use default address",
+				Usage: "the spend address of the transaction",
 			},
 			cli.StringFlag{
 				Name:  "to",
