@@ -23,11 +23,18 @@ func GetDataSync(dataStore DataStore) DataSync {
 }
 
 func (sync *DataSyncImpl) SyncChainData() {
-
 	// Get the addresses in this wallet
 	sync.addresses, _ = sync.GetAddresses()
 
-	for chainHeight, currentHeight, needSync := sync.needSyncBlocks(); needSync; {
+	var chainHeight uint32
+	var currentHeight uint32
+	var needSync bool
+
+	for {
+		chainHeight, currentHeight, needSync = sync.needSyncBlocks()
+		if !needSync {
+			break
+		}
 
 		for currentHeight < chainHeight {
 			block, err := GetBlockByHeight(currentHeight)
@@ -42,6 +49,7 @@ func (sync *DataSyncImpl) SyncChainData() {
 			fmt.Print(">")
 		}
 	}
+
 	fmt.Print("\n")
 }
 
@@ -73,11 +81,13 @@ func (sync *DataSyncImpl) containAddress(address string) (*Address, bool) {
 func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
 	// Add UTXO to wallet address from transaction outputs
 	for _, txn := range block.Transactions {
+
+		// Add UTXOs to wallet address from transaction outputs
 		for index, output := range txn.Outputs {
 			if addr, ok := sync.containAddress(output.Address); ok {
 				// Create UTXO input from output
 				txHashBytes, _ := HexStringToBytesReverse(txn.Hash)
-				referTxHash, _ := Uint256ParseFromBytes(txHashBytes)
+				referTxHash, _ := Uint256FromBytes(txHashBytes)
 				sequence := output.OutputLock
 				if txn.TxType == tx.CoinBase {
 					sequence = block.BlockData.Height + 100
@@ -96,13 +106,11 @@ func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
 				sync.AddAddressUTXO(addr.ProgramHash, addressUTXO)
 			}
 		}
-	}
 
-	// Delete UTXO from wallet address by transaction inputs
-	for _, txn := range block.Transactions {
+		// Delete UTXOs from wallet by transaction inputs
 		for _, input := range txn.UTXOInputs {
 			txHashBytes, _ := HexStringToBytesReverse(input.ReferTxID)
-			referTxID, _ := Uint256ParseFromBytes(txHashBytes)
+			referTxID, _ := Uint256FromBytes(txHashBytes)
 			txInput := &tx.UTXOTxInput{
 				ReferTxID:          *referTxID,
 				ReferTxOutputIndex: input.ReferTxOutputIndex,

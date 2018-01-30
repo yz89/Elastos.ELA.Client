@@ -73,7 +73,7 @@ func (u *Uint256) String() string {
 	return BytesToHexString(u.ToArray())
 }
 
-func Uint256ParseFromBytes(f []byte) (*Uint256, error) {
+func Uint256FromBytes(f []byte) (*Uint256, error) {
 	if len(f) != UINT256SIZE {
 		return nil, errors.New("[Common]: Uint256ParseFromBytes err, len != 32")
 	}
