@@ -170,7 +170,7 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 	for _, output := range outputs {
 		receiver, err := Uint168FromAddress(output.Address)
 		if err != nil {
-			return nil, errors.New(fmt.Sprint("[Wallet], Invalid receiver address:", output.Address))
+			return nil, errors.New(fmt.Sprint("[Wallet], Invalid receiver address: ", output.Address))
 		}
 		txOutput := &tx.TxOutput{
 			AssetID:     SystemAssetId,

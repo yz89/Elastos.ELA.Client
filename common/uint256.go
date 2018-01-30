@@ -35,6 +35,7 @@ func (u *Uint256) ToArray() []byte {
 
 	return x
 }
+
 func (u *Uint256) ToArrayReverse() []byte {
 	var x = make([]byte, UINT256SIZE)
 	for i, j := 0, UINT256SIZE-1; i < j; i, j = i+1, j-1 {
@@ -42,6 +43,7 @@ func (u *Uint256) ToArrayReverse() []byte {
 	}
 	return x
 }
+
 func (u *Uint256) Serialize(w io.Writer) (int, error) {
 	b_buf := bytes.NewBuffer([]byte{})
 	binary.Write(b_buf, binary.LittleEndian, u)
@@ -73,7 +75,7 @@ func (u *Uint256) String() string {
 	return BytesToHexString(u.ToArray())
 }
 
-func Uint256ParseFromBytes(f []byte) (*Uint256, error) {
+func Uint256FromBytes(f []byte) (*Uint256, error) {
 	if len(f) != UINT256SIZE {
 		return nil, errors.New("[Common]: Uint256ParseFromBytes err, len != 32")
 	}
