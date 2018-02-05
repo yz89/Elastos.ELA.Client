@@ -94,14 +94,18 @@ func (self *Uint168) ToAddress() (string, error) {
 	return string(encoded), nil
 }
 
-func Uint168FromBytes(f []byte) (*Uint168, error) {
-	if len(f) != UINT168SIZE {
-		return nil, errors.New("[Common]: Uint168FromBytes err, len != 21")
+func Uint168FromBytes(bytes []byte) (*Uint168, error) {
+	if len(bytes) != UINT168SIZE {
+		return nil, errors.New("Uint168FromBytes err, len != 21")
+	}
+
+	if bytes[0] != 18 && bytes[0] != 33 {
+		return nil, errors.New("invalid address type, unknown prefix")
 	}
 
 	var hash = &Uint168{}
 	for i := 0; i < UINT168SIZE; i++ {
-		hash[i] = f[i]
+		hash[i] = bytes[i]
 	}
 
 	return hash, nil
