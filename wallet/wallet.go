@@ -13,7 +13,7 @@ import (
 	"ELAClient/core/asset"
 	"ELAClient/common/log"
 	tx "ELAClient/core/transaction"
-	pg "ELAClient/core/contract/program"
+	pg "ELAClient/core/program"
 	"ELAClient/core/transaction/payload"
 )
 

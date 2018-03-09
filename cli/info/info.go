@@ -15,16 +15,6 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	if c.Bool("version") {
-		result, err := CallAndUnmarshal("getversion", nil)
-		if err != nil {
-			fmt.Println("error: get node version failed, ", err)
-			return err
-		}
-		fmt.Println(result)
-		return nil
-	}
-
 	if c.Bool("connections") {
 		result, err := CallAndUnmarshal("getconnectioncount", nil)
 		if err != nil {
@@ -123,10 +113,6 @@ func NewCommand() *cli.Command {
 		Description: "With ela-cli info, you could look up blocks, transactions, etc.",
 		ArgsUsage:   "[args]",
 		Flags: []cli.Flag{
-			cli.BoolFlag{
-				Name:  "version, v",
-				Usage: "version of the connected node",
-			},
 			cli.BoolFlag{
 				Name:  "connections, cs",
 				Usage: "how many connections are holding by the connected node",

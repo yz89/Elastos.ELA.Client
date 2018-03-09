@@ -20,3 +20,4 @@ deps/
 *.dat
 *.db
 *.txn
+cli-config.json
