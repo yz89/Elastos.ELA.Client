@@ -10,7 +10,7 @@ import (
 	"ELAClient/crypto"
 	. "ELAClient/common"
 	"ELAClient/common/serialization"
-	"ELAClient/core/contract/program"
+	"ELAClient/core/program"
 	"ELAClient/core/transaction/payload"
 )
 
