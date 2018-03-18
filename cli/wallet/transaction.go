@@ -7,18 +7,62 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 
 	"github.com/elastos/Elastos.ELA.Client/rpc"
 	"github.com/elastos/Elastos.ELA.Client/log"
 	walt "github.com/elastos/Elastos.ELA.Client/wallet"
-
 	. "github.com/elastos/Elastos.ELA/core"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"github.com/urfave/cli"
 )
+
+func createCrossChainTransaction(c *cli.Context, wallet walt.Wallet, from, to string, amount, fee *Fixed64) error {
+
+	targetPK := c.String("key")
+	if targetPK == "" {
+		return errors.New("use --key to specify target account pulbic key")
+	}
+	targetPKBytes, err := HexStringToBytes(targetPK)
+	if err != nil {
+		return errors.New("get targetPK failed: " + err.Error())
+	}
+
+	_, err = wallet.CreateCrossChainTransaction(from, to, targetPKBytes, amount, fee)
+	if err != nil {
+		return errors.New("create transaction failed: " + err.Error())
+	}
+
+	return nil
+}
+
+func getDepositAddress() (string, error) {
+
+	genesisHash := config.Config().SideChainGenesisHash
+	genesisHashByte, err := HexStringToBytes(genesisHash)
+	if err != nil {
+		return "", errors.New("invalid genesis block hash")
+	}
+
+	redeemScript, err := tx.CreateCrossChainRedeemScript(genesisHashByte)
+	if err != nil {
+		return "", errors.New("CreateCrossChainRedeemScript failed")
+	}
+
+	programHash, err := tx.ToProgramHash(redeemScript)
+	if err != nil {
+		return "", errors.New("create programhash from genesis block hash faled")
+	}
+
+	address, err := programHash.ToAddress()
+	if err != nil {
+		return "", errors.New("create address from genesis programhash faled")
+	}
+
+	return address, nil
+}
 
 func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 
@@ -45,11 +89,6 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 		return createMultiOutputTransaction(c, wallet, multiOutput, from, fee)
 	}
 
-	to := c.String("to")
-	if to == "" {
-		return errors.New("use --to to specify receiver address")
-	}
-
 	amountStr := c.String("amount")
 	if amountStr == "" {
 		return errors.New("use --amount to specify transfer amount")
@@ -60,8 +99,31 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 		return errors.New("invalid transaction amount")
 	}
 
-	lockStr := c.String("lock")
 	var txn *Transaction
+	var to string
+	standard := c.String("to")
+	deposite := c.String("deposite")
+	withdraw := c.String("withdraw")
+
+	if deposite != "" {
+		to, err = getDepositAddress()
+		err = createCrossChainTransaction(c, wallet, from, to, amount, fee)
+		if err != nil {
+			return err
+		}
+	} else if withdraw != "" {
+		to = config.Config().DestroyAddress
+		err = createCrossChainTransaction(c, wallet, from, to, amount, fee)
+		if err != nil {
+			return err
+		}
+	} else if standard != "" {
+		to = standard
+	} else {
+		return errors.New("use --to or --deposit or --withdraw to specify receiver address")
+	}
+
+	lockStr := c.String("lock")
 	if lockStr == "" {
 		txn, err = wallet.CreateTransaction(from, to, amount, fee)
 		if err != nil {
