@@ -3,7 +3,7 @@ package info
 import (
 	"fmt"
 	"strconv"
-	
+
 	. "ELAClient/rpc"
 
 	"github.com/urfave/cli"
@@ -55,7 +55,7 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	if height := c.Uint("getblockhash"); height >= 0 {
+	if height := c.Int64("getblockhash"); height >= 0 {
 		result, err := CallAndUnmarshal("getblockhash", Param("height", height))
 		if err != nil {
 			fmt.Println("error: get block hash failed, ", err)
@@ -67,7 +67,6 @@ func infoAction(c *cli.Context) error {
 
 	if param := c.String("getblock"); param != "" {
 		height, err := strconv.ParseInt(param, 10, 64)
-
 		var result interface{}
 		if err == nil {
 			result, err = CallAndUnmarshal("getblockbyheight", Param("height", height))
@@ -129,9 +128,10 @@ func NewCommand() *cli.Command {
 				Name:  "currentheight, ch",
 				Usage: "current blocks in the blockchain",
 			},
-			cli.UintFlag{
+			cli.Int64Flag{
 				Name:  "getblockhash, gbh",
 				Usage: "query a block's hash with it's height",
+				Value: -1,
 			},
 			cli.StringFlag{
 				Name:  "getblock, gb",
