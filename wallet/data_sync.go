@@ -1,10 +1,11 @@
 package wallet
 
 import (
+	"fmt"
+
 	"ELAClient/rpc"
 	. "ELAClient/common"
 	tx "ELAClient/core/transaction"
-	"fmt"
 )
 
 type DataSync interface {
@@ -36,8 +37,8 @@ func (sync *DataSyncImpl) SyncChainData() {
 			break
 		}
 
-		for currentHeight < chainHeight {
-			block, err := rpc.GetBlockByHeight(currentHeight)
+		for currentHeight <= chainHeight {
+			block, err := GetBlockByHeight(currentHeight)
 			if err != nil {
 				break
 			}
@@ -62,7 +63,7 @@ func (sync *DataSyncImpl) needSyncBlocks() (uint32, uint32, bool) {
 
 	currentHeight := sync.CurrentHeight(QueryHeightCode)
 
-	if currentHeight >= chainHeight {
+	if currentHeight-1 >= chainHeight {
 		return chainHeight, currentHeight, false
 	}
 
@@ -87,20 +88,16 @@ func (sync *DataSyncImpl) processBlock(block *rpc.BlockInfo) {
 				// Create UTXO input from output
 				txHashBytes, _ := HexStringToBytesReverse(txn.Hash)
 				referTxHash, _ := Uint256FromBytes(txHashBytes)
-				sequence := output.OutputLock
+				lockTime := output.OutputLock
 				if txn.TxType == tx.CoinBase {
-					sequence = block.BlockData.Height + 100
-				}
-				input := &tx.UTXOTxInput{
-					ReferTxID:          *referTxHash,
-					ReferTxOutputIndex: uint16(index),
-					Sequence:           sequence,
+					lockTime = block.BlockData.Height + 100
 				}
 				amount, _ := StringToFixed64(output.Value)
 				// Save UTXO input to data store
 				addressUTXO := &AddressUTXO{
-					Input:  input,
-					Amount: amount,
+					Op:       tx.NewOutPoint(*referTxHash, uint16(index)),
+					Amount:   amount,
+					LockTime: lockTime,
 				}
 				sync.AddAddressUTXO(addr.ProgramHash, addressUTXO)
 			}
@@ -110,12 +107,7 @@ func (sync *DataSyncImpl) processBlock(block *rpc.BlockInfo) {
 		for _, input := range txn.UTXOInputs {
 			txHashBytes, _ := HexStringToBytesReverse(input.ReferTxID)
 			referTxID, _ := Uint256FromBytes(txHashBytes)
-			txInput := &tx.UTXOTxInput{
-				ReferTxID:          *referTxID,
-				ReferTxOutputIndex: input.ReferTxOutputIndex,
-				Sequence:           input.Sequence,
-			}
-			sync.DeleteUTXO(txInput)
+			sync.DeleteUTXO(tx.NewOutPoint(*referTxID, input.ReferTxOutputIndex))
 		}
 	}
 }
