@@ -55,25 +55,8 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	if param := c.String("getblock"); param != "" {
-		height, err := strconv.ParseInt(param, 10, 64)
-
-		var result []byte
-		if err == nil {
-			result, err = rpc.Call("getblock", height)
-		} else {
-			result, err = rpc.Call("getblock", param)
-		}
-		if err != nil {
-			fmt.Println("error: get block failed, ", err)
-			return err
-		}
-		fmt.Println(string(result))
-		return nil
-	}
-
-	if height := c.Uint("getblockhash"); height >= 0 {
-		result, err := rpc.CallAndUnmarshal("getblockhash", height)
+	if height := c.Int64("getblockhash"); height >= 0 {
+		result, err := CallAndUnmarshal("getblockhash", Param("height", height))
 		if err != nil {
 			fmt.Println("error: get block hash failed, ", err)
 			return err
@@ -82,8 +65,14 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	if param := c.String("gettransaction"); param != "" {
-		result, err := rpc.CallAndUnmarshal("getrawtransaction", param)
+	if param := c.String("getblock"); param != "" {
+		height, err := strconv.ParseInt(param, 10, 64)
+		var result interface{}
+		if err == nil {
+			result, err = CallAndUnmarshal("getblockbyheight", Param("height", height))
+		} else {
+			result, err = CallAndUnmarshal("getblockbyhash", Param("hash", param))
+		}
 		if err != nil {
 			fmt.Println("error: get transaction failed, ", err)
 			return err
@@ -139,9 +128,10 @@ func NewCommand() *cli.Command {
 				Name:  "blockcount, bc",
 				Usage: "current blocks in the blockchain",
 			},
-			cli.UintFlag{
+			cli.Int64Flag{
 				Name:  "getblockhash, gbh",
 				Usage: "query a block's hash with it's height",
+				Value: -1,
 			},
 			cli.StringFlag{
 				Name:  "getblock, gb",
