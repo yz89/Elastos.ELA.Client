@@ -32,7 +32,7 @@ func miningAction(c *cli.Context) error {
 		return nil
 	}
 
-	if num := c.String("mine"); num != "" {
+	if num := c.String("number"); num != "" {
 		number, err := strconv.ParseInt(num, 10, 16)
 		if err != nil || number < 1 {
 			return errors.New("[number] must be a positive integer")
@@ -61,8 +61,8 @@ func NewCommand() *cli.Command {
 				Usage: "use --toggle [start, stop] to toggle cpu mining",
 			},
 			cli.StringFlag{
-				Name:  "mine, m",
-				Usage: "user --mine [number] to manual mine the given number of blocks",
+				Name:  "number, n",
+				Usage: "user --number [number] to manual mine the given number of blocks",
 			},
 		},
 		Action: miningAction,
