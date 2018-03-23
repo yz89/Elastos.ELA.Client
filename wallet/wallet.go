@@ -192,7 +192,12 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 	// Create transaction inputs
 	var txInputs []*tx.UTXOTxInput // The inputs in transaction
 	for _, utxo := range availableUTXOs {
-		txInputs = append(txInputs, utxo.Input)
+		input := &tx.UTXOTxInput{
+			ReferTxID:          utxo.Op.TxID,
+			ReferTxOutputIndex: utxo.Op.Index,
+			Sequence:           utxo.LockTime,
+		}
+		txInputs = append(txInputs, input)
 		if *utxo.Amount < totalOutputAmount {
 			totalOutputAmount -= *utxo.Amount
 		} else if *utxo.Amount == totalOutputAmount {
@@ -338,11 +343,11 @@ func (wallet *WalletImpl) removeLockedUTXOs(utxos []*AddressUTXO) []*AddressUTXO
 	var availableUTXOs []*AddressUTXO
 	var currentHeight = wallet.CurrentHeight(QueryHeightCode)
 	for _, utxo := range utxos {
-		if utxo.Input.Sequence > 0 {
-			if utxo.Input.Sequence >= currentHeight {
+		if utxo.LockTime > 0 {
+			if utxo.LockTime >= currentHeight {
 				continue
 			}
-			utxo.Input.Sequence = math.MaxUint32 - 1
+			utxo.LockTime = math.MaxUint32 - 1
 		}
 		availableUTXOs = append(availableUTXOs, utxo)
 	}

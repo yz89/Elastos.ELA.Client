@@ -31,14 +31,14 @@ const (
 			);`
 	CreateAddressesTable = `CREATE TABLE IF NOT EXISTS Addresses (
 				Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-				ProgramHash BLOB UNIQUE,
-				RedeemScript BLOB
+				ProgramHash BLOB UNIQUE NOT NULL,
+				RedeemScript BLOB UNIQUE NOT NULL
 			);`
 	CreateUTXOsTable = `CREATE TABLE IF NOT EXISTS UTXOs (
-				Id INTEGER NOT NULL PRIMARY KEY,
-				UTXOInput BLOB UNIQUE,
-				Amount VARCHAR,
-				AddressId INTEGER,
+				OutPoint BLOB NOT NULL PRIMARY KEY,
+				Amount BLOB NOT NULL,
+				LockTime INTEGER NOT NULL,
+				AddressId INTEGER NOT NULL,
 				FOREIGN KEY(AddressId) REFERENCES Addresses(Id)
 			);`
 )
@@ -50,8 +50,9 @@ type Address struct {
 }
 
 type AddressUTXO struct {
-	Input  *tx.UTXOTxInput
-	Amount *Fixed64
+	Op       *tx.OutPoint
+	Amount   *Fixed64
+	LockTime uint32
 }
 
 type DataStore interface {
@@ -66,7 +67,7 @@ type DataStore interface {
 	GetAddresses() ([]*Address, error)
 
 	AddAddressUTXO(programHash *Uint168, utxo *AddressUTXO) error
-	DeleteUTXO(input *tx.UTXOTxInput) error
+	DeleteUTXO(input *tx.OutPoint) error
 	GetAddressUTXOs(programHash *Uint168) ([]*AddressUTXO, error)
 
 	ResetDataStore() error
@@ -297,41 +298,41 @@ func (store *DataStoreImpl) AddAddressUTXO(programHash *Uint168, utxo *AddressUT
 		return err
 	}
 	// Prepare sql statement
-	stmt, err := store.Prepare("INSERT INTO UTXOs(UTXOInput, Amount, AddressId) values(?,?,?)")
+	stmt, err := store.Prepare("INSERT INTO UTXOs(OutPoint, Amount, LockTime, AddressId) values(?,?,?,?)")
 	if err != nil {
 		return err
 	}
 	// Serialize input
 	buf := new(bytes.Buffer)
-	utxo.Input.Serialize(buf)
-	inputBytes := buf.Bytes()
+	utxo.Op.Serialize(buf)
+	opBytes := buf.Bytes()
 	// Serialize amount
 	buf = new(bytes.Buffer)
 	utxo.Amount.Serialize(buf)
 	amountBytes := buf.Bytes()
 	// Do insert
-	_, err = stmt.Exec(inputBytes, amountBytes, addressId)
+	_, err = stmt.Exec(opBytes, amountBytes, utxo.LockTime, addressId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (store *DataStoreImpl) DeleteUTXO(input *tx.UTXOTxInput) error {
+func (store *DataStoreImpl) DeleteUTXO(op *tx.OutPoint) error {
 	store.Lock()
 	defer store.Unlock()
 
 	// Prepare sql statement
-	stmt, err := store.Prepare("DELETE FROM UTXOs WHERE UTXOInput=?")
+	stmt, err := store.Prepare("DELETE FROM UTXOs WHERE OutPoint=?")
 	if err != nil {
 		return err
 	}
 	// Serialize input
 	buf := new(bytes.Buffer)
-	input.Serialize(buf)
-	inputBytes := buf.Bytes()
+	op.Serialize(buf)
+	opBytes := buf.Bytes()
 	// Do delete
-	_, err = stmt.Exec(inputBytes)
+	_, err = stmt.Exec(opBytes)
 	if err != nil {
 		return err
 	}
@@ -342,7 +343,7 @@ func (store *DataStoreImpl) GetAddressUTXOs(programHash *Uint168) ([]*AddressUTX
 	store.Lock()
 	defer store.Unlock()
 
-	rows, err := store.Query(`SELECT UTXOs.UTXOInput, UTXOs.Amount FROM UTXOs INNER JOIN Addresses
+	rows, err := store.Query(`SELECT UTXOs.OutPoint, UTXOs.Amount, UTXOs.LockTime FROM UTXOs INNER JOIN Addresses
  								ON UTXOs.AddressId=Addresses.Id WHERE Addresses.ProgramHash=?`, programHash.ToArray())
 	if err != nil {
 		return nil, err
@@ -351,22 +352,23 @@ func (store *DataStoreImpl) GetAddressUTXOs(programHash *Uint168) ([]*AddressUTX
 
 	var inputs []*AddressUTXO
 	for rows.Next() {
-		var outputBytes []byte
+		var opBytes []byte
 		var amountBytes []byte
-		err = rows.Scan(&outputBytes, &amountBytes)
+		var lockTime uint32
+		err = rows.Scan(&opBytes, &amountBytes, &lockTime)
 		if err != nil {
 			return nil, err
 		}
 
-		var input tx.UTXOTxInput
-		reader := bytes.NewReader(outputBytes)
-		input.Deserialize(reader)
+		var op tx.OutPoint
+		reader := bytes.NewReader(opBytes)
+		op.Deserialize(reader)
 
 		var amount Fixed64
 		reader = bytes.NewReader(amountBytes)
 		amount.Deserialize(reader)
 
-		inputs = append(inputs, &AddressUTXO{&input, &amount})
+		inputs = append(inputs, &AddressUTXO{&op, &amount, lockTime})
 	}
 	return inputs, nil
 }
