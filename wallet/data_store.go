@@ -31,15 +31,13 @@ const (
 			);`
 	CreateAddressesTable = `CREATE TABLE IF NOT EXISTS Addresses (
 				Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-				ProgramHash BLOB UNIQUE,
-				RedeemScript BLOB
+				ProgramHash BLOB UNIQUE NOT NULL,
+				RedeemScript BLOB UNIQUE NOT NULL
 			);`
 	CreateUTXOsTable = `CREATE TABLE IF NOT EXISTS UTXOs (
-				Id INTEGER NOT NULL PRIMARY KEY,
-				ReferTxID BLOB NOT NULL,
-				ReferIndex INTEGER NOT NULL,
-				Sequence INTEGER NOT NULL,
+				OutPoint BLOB NOT NULL PRIMARY KEY,
 				Amount BLOB NOT NULL,
+				LockTime INTEGER NOT NULL,
 				AddressId INTEGER NOT NULL,
 				FOREIGN KEY(AddressId) REFERENCES Addresses(Id)
 			);`
@@ -52,8 +50,9 @@ type Address struct {
 }
 
 type AddressUTXO struct {
-	Input  *tx.UTXOTxInput
-	Amount *Fixed64
+	Op       *tx.OutPoint
+	Amount   *Fixed64
+	LockTime uint32
 }
 
 type DataStore interface {
@@ -68,7 +67,7 @@ type DataStore interface {
 	GetAddresses() ([]*Address, error)
 
 	AddAddressUTXO(programHash *Uint168, utxo *AddressUTXO) error
-	DeleteUTXO(input *tx.UTXOTxInput) error
+	DeleteUTXO(input *tx.OutPoint) error
 	GetAddressUTXOs(programHash *Uint168) ([]*AddressUTXO, error)
 
 	ResetDataStore() error
@@ -293,44 +292,41 @@ func (store *DataStoreImpl) AddAddressUTXO(programHash *Uint168, utxo *AddressUT
 	defer store.Unlock()
 
 	// Prepare sql statement
-	stmt, err := store.Prepare(
-		`INSERT INTO UTXOs(ReferTxID, ReferIndex, Sequence, Amount, AddressId)
-		 		SELECT ?,?,?,?,(SELECT Id FROM Addresses WHERE ProgramHash=?)
-		 		WHERE NOT EXISTS(SELECT 1 FROM UTXOs WHERE ReferTxID=? AND ReferIndex=?)`)
+	stmt, err := store.Prepare("INSERT INTO UTXOs(OutPoint, Amount, LockTime, AddressId) values(?,?,?,?)")
 	if err != nil {
 		return err
 	}
+	// Serialize input
+	buf := new(bytes.Buffer)
+	utxo.Op.Serialize(buf)
+	opBytes := buf.Bytes()
 	// Serialize amount
 	buf := new(bytes.Buffer)
 	utxo.Amount.Serialize(buf)
 	amountBytes := buf.Bytes()
 	// Do insert
-	_, err = stmt.Exec(
-		utxo.Input.ReferTxID.ToArray(),
-		utxo.Input.ReferTxOutputIndex,
-		utxo.Input.Sequence,
-		amountBytes,
-		programHash.ToArray(),
-		utxo.Input.ReferTxID.ToArray(),
-		utxo.Input.ReferTxOutputIndex,
-	)
+	_, err = stmt.Exec(opBytes, amountBytes, utxo.LockTime, addressId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (store *DataStoreImpl) DeleteUTXO(input *tx.UTXOTxInput) error {
+func (store *DataStoreImpl) DeleteUTXO(op *tx.OutPoint) error {
 	store.Lock()
 	defer store.Unlock()
 
 	// Prepare sql statement
-	stmt, err := store.Prepare("DELETE FROM UTXOs WHERE ReferTxID=? AND ReferIndex=?")
+	stmt, err := store.Prepare("DELETE FROM UTXOs WHERE OutPoint=?")
 	if err != nil {
 		return err
 	}
+	// Serialize input
+	buf := new(bytes.Buffer)
+	op.Serialize(buf)
+	opBytes := buf.Bytes()
 	// Do delete
-	_, err = stmt.Exec(input.ReferTxID.ToArray(), input.ReferTxOutputIndex)
+	_, err = stmt.Exec(opBytes)
 	if err != nil {
 		return err
 	}
@@ -341,10 +337,8 @@ func (store *DataStoreImpl) GetAddressUTXOs(programHash *Uint168) ([]*AddressUTX
 	store.Lock()
 	defer store.Unlock()
 
-	rows, err := store.Query(
-		`SELECT UTXOs.ReferTxID, UTXOs.ReferIndex, UTXOs.Sequence, UTXOs.Amount
-				FROM UTXOs INNER JOIN Addresses ON UTXOs.AddressId=Addresses.Id
-				WHERE Addresses.ProgramHash=?`, programHash.ToArray())
+	rows, err := store.Query(`SELECT UTXOs.OutPoint, UTXOs.Amount, UTXOs.LockTime FROM UTXOs INNER JOIN Addresses
+ 								ON UTXOs.AddressId=Addresses.Id WHERE Addresses.ProgramHash=?`, programHash.ToArray())
 	if err != nil {
 		return nil, err
 	}
@@ -352,27 +346,23 @@ func (store *DataStoreImpl) GetAddressUTXOs(programHash *Uint168) ([]*AddressUTX
 
 	var inputs []*AddressUTXO
 	for rows.Next() {
-		var referTxIDBytes []byte
-		var referIndex uint16
-		var sequence uint32
+		var opBytes []byte
 		var amountBytes []byte
-		err = rows.Scan(&referTxIDBytes, &referIndex, &sequence, &amountBytes)
+		var lockTime uint32
+		err = rows.Scan(&opBytes, &amountBytes, &lockTime)
 		if err != nil {
 			return nil, err
 		}
 
-		referTxID, _ := Uint256FromBytes(referTxIDBytes)
-		input := &tx.UTXOTxInput{
-			ReferTxID:          *referTxID,
-			ReferTxOutputIndex: referIndex,
-			Sequence:           sequence,
-		}
+		var op tx.OutPoint
+		reader := bytes.NewReader(opBytes)
+		op.Deserialize(reader)
 
 		var amount Fixed64
 		reader := bytes.NewReader(amountBytes)
 		amount.Deserialize(reader)
 
-		inputs = append(inputs, &AddressUTXO{input, &amount})
+		inputs = append(inputs, &AddressUTXO{&op, &amount, lockTime})
 	}
 	return inputs, nil
 }

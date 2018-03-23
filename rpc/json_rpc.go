@@ -12,6 +12,11 @@ import (
 	"bytes"
 )
 
+type Response struct {
+	Code   int         `json:"code"`
+	Result interface{} `json:"result"`
+}
+
 var url string
 
 func GetBlockCount() (uint32, error) {
