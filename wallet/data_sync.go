@@ -62,7 +62,7 @@ func (sync *DataSyncImpl) needSyncBlocks() (uint32, uint32, bool) {
 
 	currentHeight := sync.CurrentHeight(QueryHeightCode)
 
-	if currentHeight-1 >= chainHeight {
+	if currentHeight >= chainHeight+1 {
 		return chainHeight, currentHeight, false
 	}
 
