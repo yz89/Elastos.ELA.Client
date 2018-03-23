@@ -309,7 +309,9 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 	}
 
 	txn := wallet.newTransaction(account.RedeemScript, txInputs, txOutputs)
-	txn.Attributes = txAttribute
+	for _, att := range txAttribute {
+		txn.Attributes = append(txn.Attributes, att)
+	}
 	return txn, nil
 }
 
