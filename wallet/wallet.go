@@ -23,9 +23,9 @@ type Transfer struct {
 }
 
 type CrossChainOutput struct {
-	Address   string
-	Amount    *Fixed64
-	PublicKey string
+	Address           string
+	Amount            *Fixed64
+	CrossChainAddress string
 }
 
 var wallet Wallet // Single instance of wallet
@@ -253,7 +253,7 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 	totalOutputAmount += *fee          // Add transaction fee
 
 	txPayload := &payload.TransferCrossChainAsset{}
-	txPayload.PublicKeys = make(map[string]uint64)
+	txPayload.CrossChainAddress = make(map[string]uint64)
 	for index, output := range outputs {
 		receiver, err := Uint168FromAddress(output.Address)
 		if err != nil {
@@ -268,7 +268,7 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 		totalOutputAmount += *output.Amount
 		txOutputs = append(txOutputs, txOutput)
 
-		txPayload.PublicKeys[output.PublicKey] = uint64(index)
+		txPayload.CrossChainAddress[output.CrossChainAddress] = uint64(index)
 	}
 	// Get spender's UTXOs
 	UTXOs, err := wallet.GetAddressUTXOs(spender)
