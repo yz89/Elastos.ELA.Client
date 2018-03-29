@@ -241,13 +241,13 @@ func walletAction(context *cli.Context) {
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "wallet",
-		Usage:       "user wallet operation",
-		Description: "With ela-cli wallet, you could control your asset.",
+		Usage:       "wallet operations",
+		Description: "With ela-cli wallet, you can create an account, check account balance or build, sign and send transactions.",
 		ArgsUsage:   "[args]",
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "password, p",
-				Usage: "keystore password",
+				Usage: "arguments to pass the password value",
 			},
 			cli.StringFlag{
 				Name:  "name, n",
@@ -256,27 +256,27 @@ func NewCommand() *cli.Command {
 			},
 			cli.BoolFlag{
 				Name:  "create, c",
-				Usage: "create wallet",
+				Usage: "create wallet, this will generate a keystore file within you account information",
 			},
 			cli.BoolFlag{
 				Name:  "account, a",
-				Usage: "show account info",
+				Usage: "show account address, public key and program hash",
 			},
 			cli.BoolFlag{
 				Name:  "changepassword",
-				Usage: "change wallet password",
+				Usage: "change the password to access this wallet, must do not forget it",
 			},
 			cli.BoolFlag{
 				Name:  "reset",
-				Usage: "reset wallet data store",
+				Usage: "clear the UTXOs stored in the local database",
 			},
 			cli.StringFlag{
 				Name:  "addaccount",
-				Usage: "add a standard account with it's public key",
+				Usage: "add a standard account with a public key",
 			},
 			cli.StringFlag{
 				Name: "addmultisignaccount",
-				Usage: "add a multi-sign account with signers public keys\n" +
+				Usage: "add a multi-sign account with multiple public keys\n" +
 					"\tuse -m to specify how many signatures are needed to create a valid transaction\n" +
 					"\tby default M is public keys / 2 + 1, witch means greater than half",
 			},
@@ -287,11 +287,11 @@ func NewCommand() *cli.Command {
 			},
 			cli.StringFlag{
 				Name:  "deleteaccount",
-				Usage: "delete account from database using it's address",
+				Usage: "delete an account from database using it's address",
 			},
 			cli.BoolFlag{
 				Name:  "balance, b",
-				Usage: "list balances",
+				Usage: "list account balances stored in this wallet",
 			},
 			cli.StringFlag{
 				Name: "transaction, t",
@@ -300,7 +300,7 @@ func NewCommand() *cli.Command {
 					"\t\tuse --to --amount --fee [--lock], or --file --fee [--lock]\n" +
 					"\t\tto create a standard transaction, or multi output transaction\n" +
 					"\tsign, send:\n" +
-					"\t\tuse --content to specify the transaction file path or it's content\n",
+					"\t\tuse --file or --hex to specify the transaction file path or content\n",
 			},
 			cli.StringFlag{
 				Name:  "from",
@@ -328,8 +328,8 @@ func NewCommand() *cli.Command {
 			},
 			cli.StringFlag{
 				Name: "file, f",
-				Usage: "the file path to specify a CSV format file path with [address,amount] as multi output content,\n" +
-					"or the transaction file path with the hex string content to be sign or send",
+				Usage: "the file path to specify a CSV file path with [address,amount] format as multi output content,\n" +
+					"\tor the transaction file path with the hex string content to be sign or send",
 			},
 		},
 		Action: walletAction,
