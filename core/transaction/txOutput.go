@@ -4,8 +4,8 @@ import (
 	"io"
 	"fmt"
 
-	. "ELAClient/common"
-	"ELAClient/common/serialization"
+	. "Elastos.ELA.Client/common"
+	"Elastos.ELA.Client/common/serialization"
 )
 
 type TxOutput struct {

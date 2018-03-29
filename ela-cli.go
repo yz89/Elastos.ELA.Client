@@ -4,12 +4,12 @@ import (
 	"os"
 	"sort"
 
-	"ELAClient/cli/debug"
-	"ELAClient/cli/info"
-	"ELAClient/cli/wallet"
-	"ELAClient/cli/mining"
+	"Elastos.ELA.Client/cli/info"
+	"Elastos.ELA.Client/cli/wallet"
+	"Elastos.ELA.Client/common/log"
+	"Elastos.ELA.Client/cli/mining"
 	"github.com/urfave/cli"
-	"ELAClient/common/log"
+	cliLog "Elastos.ELA.Client/cli/log"
 )
 
 var Version string

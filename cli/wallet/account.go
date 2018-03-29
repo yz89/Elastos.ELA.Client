@@ -7,9 +7,9 @@ import (
 	"strings"
 	"io/ioutil"
 
-	"ELAClient/crypto"
-	. "ELAClient/wallet"
-	. "ELAClient/common"
+	"Elastos.ELA.Client/crypto"
+	. "Elastos.ELA.Client/wallet"
+	. "Elastos.ELA.Client/common"
 
 	"github.com/urfave/cli"
 )

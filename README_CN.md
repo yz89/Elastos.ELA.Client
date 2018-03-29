@@ -1,7 +1,7 @@
 # ELAClient 节点控制及钱包客户端
 
 ## 安装
-1. git clone http://git.elastos.org/elatest/ELAClient.git
+1. git clone https://github.com/elastos/Elastos.ELA.Client.git
 2. cd ELAClient
 3. make install
 4. make

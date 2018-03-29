@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"io/ioutil"
 
-	"ELAClient/rpc"
-	. "ELAClient/common"
-	"ELAClient/common/log"
-	walt "ELAClient/wallet"
-	tx "ELAClient/core/transaction"
+	. "Elastos.ELA.Client/rpc"
+	. "Elastos.ELA.Client/common"
+	"Elastos.ELA.Client/common/log"
+	walt "Elastos.ELA.Client/wallet"
+	tx "Elastos.ELA.Client/core/transaction"
 
 	"github.com/urfave/cli"
 )

@@ -2,14 +2,14 @@ package rpc
 
 import (
 	"fmt"
+	"bytes"
 	"strconv"
 	"strings"
 	"net/http"
 	"io/ioutil"
 	"encoding/json"
 
-	"ELAClient/common/config"
-	"bytes"
+	"Elastos.ELA.Client/common/config"
 )
 
 type Response struct {

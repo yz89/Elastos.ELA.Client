@@ -3,7 +3,7 @@ package transaction
 import (
 	"io"
 
-	"ELAClient/common"
+	"Elastos.ELA.Client/common"
 )
 
 type BalanceTxInput struct {
