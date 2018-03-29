@@ -7,7 +7,6 @@ idea/
 build/
 *.patch
 .idea/
-GoOnchain.iml
 .log
 .DS_Store
 *.orig
@@ -20,4 +19,5 @@ deps/
 *.dat
 *.db
 *.txn
-cli-config.json
+*.lock
+*.json

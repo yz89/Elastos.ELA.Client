@@ -4,7 +4,7 @@ import (
 	"os"
 	"fmt"
 
-	"github.com/howeyc/gopass"
+	"github.com/AlexpanXX/gopass"
 )
 
 // GetPassword gets password from user input

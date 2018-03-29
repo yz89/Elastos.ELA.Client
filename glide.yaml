@@ -1,0 +1,12 @@
+package: Elastos.ELA.Client
+import:
+- package: github.com/golang/crypto
+  subpackages:
+  - ripemd160
+  - ssh/terminal
+- package: github.com/AlexpanXX/gopass
+- package: github.com/itchyny/base58-go
+- package: github.com/mattn/go-sqlite3
+- package: github.com/urfave/cli
+ignore:
+  - golang.org/x/sys/unix
