@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	. "ELAClient/rpc"
+	. "Elastos.ELA.Client/rpc"
 
 	"github.com/urfave/cli"
 )

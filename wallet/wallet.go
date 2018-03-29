@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"math/rand"
 
-	"ELAClient/crypto"
-	. "ELAClient/common"
-	"ELAClient/core/asset"
-	"ELAClient/common/log"
-	tx "ELAClient/core/transaction"
-	pg "ELAClient/core/program"
-	"ELAClient/core/transaction/payload"
+	"Elastos.ELA.Client/crypto"
+	. "Elastos.ELA.Client/common"
+	"Elastos.ELA.Client/core/asset"
+	"Elastos.ELA.Client/common/log"
+	tx "Elastos.ELA.Client/core/transaction"
+	pg "Elastos.ELA.Client/core/program"
+	"Elastos.ELA.Client/core/transaction/payload"
 )
 
 var SystemAssetId = getSystemAssetId()

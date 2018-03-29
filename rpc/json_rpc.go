@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"encoding/json"
 
-	"ELAClient/common/config"
+	"Elastos.ELA.Client/common/config"
 	"errors"
 )
 

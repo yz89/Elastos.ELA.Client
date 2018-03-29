@@ -4,8 +4,8 @@ import (
 	"io"
 	"errors"
 
-	"ELAClient/common"
-	"ELAClient/core/asset"
+	"Elastos.ELA.Client/common"
+	"Elastos.ELA.Client/core/asset"
 )
 
 type RegisterAsset struct {

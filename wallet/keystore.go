@@ -7,9 +7,9 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 
-	"ELAClient/crypto"
-	. "ELAClient/common"
-	tx "ELAClient/core/transaction"
+	"Elastos.ELA.Client/crypto"
+	. "Elastos.ELA.Client/common"
+	tx "Elastos.ELA.Client/core/transaction"
 )
 
 /*

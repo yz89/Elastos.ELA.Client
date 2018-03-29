@@ -7,8 +7,8 @@ import (
 	"errors"
 	"crypto/sha256"
 
-	"ELAClient/crypto"
-	. "ELAClient/common"
+	"Elastos.ELA.Client/crypto"
+	. "Elastos.ELA.Client/common"
 
 	"golang.org/x/crypto/ripemd160"
 )

@@ -2,9 +2,9 @@ package wallet
 
 import (
 	"fmt"
-	. "ELAClient/rpc"
-	. "ELAClient/common"
-	tx "ELAClient/core/transaction"
+	. "Elastos.ELA.Client/rpc"
+	. "Elastos.ELA.Client/common"
+	tx "Elastos.ELA.Client/core/transaction"
 )
 
 type DataSync interface {

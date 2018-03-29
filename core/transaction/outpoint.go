@@ -4,8 +4,8 @@ import (
 	"io"
 	"bytes"
 
-	. "ELAClient/common"
-	"ELAClient/common/serialization"
+	. "Elastos.ELA.Client/common"
+	"Elastos.ELA.Client/common/serialization"
 )
 
 type OutPoint struct {

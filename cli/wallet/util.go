@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	. "ELAClient/common"
-	walt "ELAClient/wallet"
+	. "Elastos.ELA.Client/common"
+	walt "Elastos.ELA.Client/wallet"
 )
 
 func selectAddress(wallet walt.Wallet) (string, error) {
