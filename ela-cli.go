@@ -7,7 +7,7 @@ import (
 	"Elastos.ELA.Client/cli/info"
 	"Elastos.ELA.Client/cli/wallet"
 	"Elastos.ELA.Client/common/log"
-	"Elastos.ELA.Client/cli/mining"
+	"Elastos.ELA.Client/cli/mine"
 	"github.com/urfave/cli"
 	cliLog "Elastos.ELA.Client/cli/log"
 )
@@ -32,7 +32,7 @@ func main() {
 		*cliLog.NewCommand(),
 		*info.NewCommand(),
 		*wallet.NewCommand(),
-		*mining.NewCommand(),
+		*mine.NewCommand(),
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 	sort.Sort(cli.FlagsByName(app.Flags))

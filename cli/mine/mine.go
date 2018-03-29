@@ -1,4 +1,4 @@
-package mining
+package mine
 
 import (
 	"fmt"
@@ -51,9 +51,9 @@ func miningAction(c *cli.Context) error {
 
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:        "mining",
-		Usage:       "toggle cpu mining.",
-		Description: "With ela-cli mining, you could toggle cpu mining, or manual mine blocks.",
+		Name:        "mine",
+		Usage:       "toggle cpu mining or manual mine",
+		Description: "With ela-cli mine, you can toggle cpu mining, or manual mine blocks.",
 		ArgsUsage:   "[args]",
 		Flags: []cli.Flag{
 			cli.StringFlag{
@@ -62,7 +62,7 @@ func NewCommand() *cli.Command {
 			},
 			cli.StringFlag{
 				Name:  "number, n",
-				Usage: "user --number [number] to manual mine the given number of blocks",
+				Usage: "user --number [number] to mine the given number of blocks",
 			},
 		},
 		Action: miningAction,

@@ -91,7 +91,6 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	// TODO format transactions in mem pool
 	if c.Bool("showtxpool") {
 		result, err := CallAndUnmarshal("gettransactionpool", nil)
 		if err != nil {
@@ -108,41 +107,41 @@ func infoAction(c *cli.Context) error {
 func NewCommand() *cli.Command {
 	return &cli.Command{
 		Name:        "info",
-		Usage:       "show blockchain information",
-		Description: "With ela-cli info, you could look up blocks, transactions, etc.",
+		Usage:       "show node information",
+		Description: "With ela-cli info, you could look up node status, query blocks, transactions, etc.",
 		ArgsUsage:   "[args]",
 		Flags: []cli.Flag{
 			cli.BoolFlag{
-				Name:  "connections, cs",
-				Usage: "how many connections are holding by the connected node",
+				Name:  "connections",
+				Usage: "see how many peers are connected with current node",
 			},
 			cli.BoolFlag{
-				Name:  "neighbors, nbs",
-				Usage: "neighbor information of the connected node",
+				Name:  "neighbor, nbr",
+				Usage: "show neighbor nodes information",
 			},
 			cli.BoolFlag{
-				Name:  "state, s",
-				Usage: "get the connected node's state",
+				Name:  "state",
+				Usage: "show current node statues",
 			},
 			cli.BoolFlag{
-				Name:  "currentheight, ch",
-				Usage: "current blocks in the blockchain",
+				Name:  "currentheight, height",
+				Usage: "show blockchain height on current node",
 			},
 			cli.Int64Flag{
-				Name:  "getblockhash, gbh",
+				Name:  "getblockhash, blockh",
 				Usage: "query a block's hash with it's height",
 				Value: -1,
 			},
 			cli.StringFlag{
-				Name:  "getblock, gb",
+				Name:  "getblock, block",
 				Usage: "query a block with height or it's hash",
 			},
 			cli.StringFlag{
-				Name:  "gettransaction, gt",
+				Name:  "gettransaction, tx",
 				Usage: "query a transaction with it's hash",
 			},
 			cli.BoolFlag{
-				Name:  "showtxpool, stp",
+				Name:  "showtxpool, txpool",
 				Usage: "show the transactions in node's transaction pool",
 			},
 		},

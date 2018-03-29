@@ -30,12 +30,13 @@ func debugAction(c *cli.Context) error {
 func NewCommand() *cli.Command {
 	return &cli.Command{Name: "log",
 		Usage: "set node log output level",
-		Description: "With ela-cli log, you could change blockchain node log output level.",
+		Description: "With ela-cli log, you could change node log output level.\n" +
+			"\t levels are 0~6, the lower level the more logs will be print out, 0 means print out everything",
 		ArgsUsage: "[args]",
 		Flags: []cli.Flag{
 			cli.IntFlag{
 				Name:  "level, l",
-				Usage: "log level 0-6",
+				Usage: "--log level",
 				Value: -1,
 			},
 		},
