@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"net/http"
 	"io/ioutil"
@@ -40,7 +39,7 @@ func GetBlockByHeight(height uint32) (*BlockInfo, error) {
 
 func Call(method string, params map[string]string) ([]byte, error) {
 	if url == "" {
-		url = "http://" + config.Config().IpAddress + ":" + strconv.Itoa(config.Config().HttpJsonPort)
+		url = "http://" + config.Params().Host
 	}
 	data, err := json.Marshal(map[string]interface{}{
 		"method": method,
@@ -50,7 +49,6 @@ func Call(method string, params map[string]string) ([]byte, error) {
 		return nil, err
 	}
 
-	//log.Trace("RPC call:", string(data))
 	resp, err := http.Post(url, "application/json", strings.NewReader(string(data)))
 	if err != nil {
 		fmt.Printf("POST requset: %v\n", err)
@@ -62,7 +60,6 @@ func Call(method string, params map[string]string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	//log.Trace("RPC resp:", string(body))
 
 	return body, nil
 }

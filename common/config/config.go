@@ -11,14 +11,13 @@ const (
 	ConfigFilename = "./cli-config.json"
 )
 
-var config *Configuration // The single instance of config
+var config *Config // The single instance of config
 
-type Configuration struct {
-	IpAddress    string `json:IpAddress`
-	HttpJsonPort int    `json:"HttpJsonPort"`
+type Config struct {
+	Host string `json:"Host"`
 }
 
-func (config *Configuration) readConfigFile() error {
+func (config *Config) readConfigFile() error {
 	data, err := ioutil.ReadFile(ConfigFilename)
 	if err != nil {
 		return err
@@ -33,12 +32,9 @@ func (config *Configuration) readConfigFile() error {
 	return nil
 }
 
-func Config() *Configuration {
+func Params() *Config {
 	if config == nil {
-		config = &Configuration{
-			"localhost",
-			20336,
-		}
+		config = &Config{"localhost:20336"}
 		err := config.readConfigFile()
 		if err != nil {
 			fmt.Println("Read config file error:", err)
