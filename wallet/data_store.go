@@ -7,9 +7,9 @@ import (
 	"bytes"
 	"database/sql"
 
-	. "Elastos.ELA.Client/common"
-	"Elastos.ELA.Client/common/log"
-	tx "Elastos.ELA.Client/core/transaction"
+	. "github.com/elastos/Elastos.ELA.Client/common"
+	"github.com/elastos/Elastos.ELA.Client/common/log"
+	tx "github.com/elastos/Elastos.ELA.Client/core/transaction"
 
 	_ "github.com/mattn/go-sqlite3"
 )

@@ -1,4 +1,4 @@
-package: Elastos.ELA.Client
+package: github.com/elastos/Elastos.ELA.Client
 import:
 - package: github.com/golang/crypto
   subpackages:

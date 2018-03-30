@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	. "Elastos.ELA.Client/common"
-	. "Elastos.ELA.Client/core/transaction"
+	. "github.com/elastos/Elastos.ELA.Client/common"
+	. "github.com/elastos/Elastos.ELA.Client/core/transaction"
 )
 
 type PayloadInfo interface{}

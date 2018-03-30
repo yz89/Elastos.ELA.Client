@@ -6,7 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/sha256"
 
-	. "Elastos.ELA.Client/common"
+	. "github.com/elastos/Elastos.ELA.Client/common"
 )
 
 func ToAesKey(pwd []byte) []byte {

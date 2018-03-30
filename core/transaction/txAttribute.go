@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"errors"
 
-	"Elastos.ELA.Client/common"
-	"Elastos.ELA.Client/common/serialization"
+	"github.com/elastos/Elastos.ELA.Client/common"
+	"github.com/elastos/Elastos.ELA.Client/common/serialization"
 )
 
 type TransactionAttributeUsage byte
