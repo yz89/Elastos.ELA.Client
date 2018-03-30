@@ -3,9 +3,9 @@ package wallet
 import (
 	"fmt"
 
-	. "Elastos.ELA.Client/rpc"
-	. "Elastos.ELA.Client/common"
-	tx "Elastos.ELA.Client/core/transaction"
+	"github.com/elastos/Elastos.ELA.Client/rpc"
+	. "github.com/elastos/Elastos.ELA.Client/common"
+	tx "github.com/elastos/Elastos.ELA.Client/core/transaction"
 )
 
 type DataSync interface {
@@ -38,7 +38,7 @@ func (sync *DataSyncImpl) SyncChainData() {
 		}
 
 		for currentHeight <= chainHeight {
-			block, err := GetBlockByHeight(currentHeight)
+			block, err := rpc.GetBlockByHeight(currentHeight)
 			if err != nil {
 				break
 			}

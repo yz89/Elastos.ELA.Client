@@ -7,9 +7,9 @@ import (
 	"bytes"
 	"database/sql"
 
-	. "Elastos.ELA.Client/common"
-	"Elastos.ELA.Client/common/log"
-	tx "Elastos.ELA.Client/core/transaction"
+	. "github.com/elastos/Elastos.ELA.Client/common"
+	"github.com/elastos/Elastos.ELA.Client/common/log"
+	tx "github.com/elastos/Elastos.ELA.Client/core/transaction"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -291,17 +291,24 @@ func (store *DataStoreImpl) AddAddressUTXO(programHash *Uint168, utxo *AddressUT
 	store.Lock()
 	defer store.Unlock()
 
+	// Find addressId by ProgramHash
+	row := store.QueryRow("SELECT Id FROM Addresses WHERE ProgramHash=?", programHash.ToArray())
+	var addressId int
+	err := row.Scan(&addressId)
+	if err != nil {
+		return err
+	}
 	// Prepare sql statement
 	stmt, err := store.Prepare("INSERT INTO UTXOs(OutPoint, Amount, LockTime, AddressId) values(?,?,?,?)")
 	if err != nil {
 		return err
 	}
-	// Serialize input
+	// Serialize outpoint
 	buf := new(bytes.Buffer)
 	utxo.Op.Serialize(buf)
 	opBytes := buf.Bytes()
 	// Serialize amount
-	buf := new(bytes.Buffer)
+	buf = new(bytes.Buffer)
 	utxo.Amount.Serialize(buf)
 	amountBytes := buf.Bytes()
 	// Do insert
@@ -359,7 +366,7 @@ func (store *DataStoreImpl) GetAddressUTXOs(programHash *Uint168) ([]*AddressUTX
 		op.Deserialize(reader)
 
 		var amount Fixed64
-		reader := bytes.NewReader(amountBytes)
+		reader = bytes.NewReader(amountBytes)
 		amount.Deserialize(reader)
 
 		inputs = append(inputs, &AddressUTXO{&op, &amount, lockTime})

@@ -1,7 +1,7 @@
 package asset
 
 import (
-	"Elastos.ELA.Client/common/serialization"
+	"github.com/elastos/Elastos.ELA.Client/common/serialization"
 	"errors"
 	"io"
 )

@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"encoding/json"
 
-	"Elastos.ELA.Client/common/config"
+	"github.com/elastos/Elastos.ELA.Client/common/config"
 )
 
 type Response struct {

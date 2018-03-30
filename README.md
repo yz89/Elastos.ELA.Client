@@ -64,10 +64,10 @@ If you cannot see the version number, there must be something wrong when install
 ### Clone source code to $GOPATH/src folder
 Make sure you are in the folder of `$GOPATH/src`
 ```shell
-$ git clone https://github.com/elastos/Elastos.Elastos.ELA.Client.git
+$ go clone https://github.com/elastos/Elastos.ELA.Client.git
 ```
 
-If clone works successfully, you should see folder structure like $GOPATH/src/Elastos.Elastos.ELA.Client/makefile
+If clone works successfully, you should see folder structure like $GOPATH/src/Elastos.github.com/elastos/Elastos.ELA.Client/makefile
 
 ### Glide install
 
@@ -76,7 +76,7 @@ Run `glide update && glide install` to download project dependencies.
 ### Install sqlite database
 This will make the `make` progress far more fester.
 ```shell
-go install Elastos.ELA.Client/vendor/github.com/mattn/go-sqlite3
+go install github.com/elastos/Elastos.ELA.Client/vendor/github.com/mattn/go-sqlite3
 ```
 
 ### Make

@@ -1,9 +1,9 @@
-package debug
+package log
 
 import (
 	"fmt"
 
-	. "Elastos.ELA.Client/rpc"
+	"github.com/elastos/Elastos.ELA.Client/rpc"
 
 	"github.com/urfave/cli"
 )

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	. "Elastos.ELA.Client/rpc"
+	"github.com/elastos/Elastos.ELA.Client/rpc"
 
 	"github.com/urfave/cli"
 )
@@ -45,7 +45,7 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	if c.Bool("blockcount") {
+	if c.Bool("currentheight") {
 		result, err := rpc.CallAndUnmarshal("getblockcount")
 		if err != nil {
 			fmt.Println("error: get block count failed, ", err)
@@ -55,8 +55,25 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
+	if param := c.String("getblock"); param != "" {
+		height, err := strconv.ParseInt(param, 10, 64)
+
+		var result []byte
+		if err == nil {
+			result, err = rpc.Call("getblock", height)
+		} else {
+			result, err = rpc.Call("getblock", param)
+		}
+		if err != nil {
+			fmt.Println("error: get block failed, ", err)
+			return err
+		}
+		fmt.Println(string(result))
+		return nil
+	}
+
 	if height := c.Int64("getblockhash"); height >= 0 {
-		result, err := CallAndUnmarshal("getblockhash", Param("height", height))
+		result, err := rpc.CallAndUnmarshal("getblockhash", height)
 		if err != nil {
 			fmt.Println("error: get block hash failed, ", err)
 			return err
@@ -65,14 +82,8 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	if param := c.String("getblock"); param != "" {
-		height, err := strconv.ParseInt(param, 10, 64)
-		var result interface{}
-		if err == nil {
-			result, err = CallAndUnmarshal("getblockbyheight", Param("height", height))
-		} else {
-			result, err = CallAndUnmarshal("getblockbyhash", Param("hash", param))
-		}
+	if param := c.String("gettransaction"); param != "" {
+		result, err := rpc.CallAndUnmarshal("getrawtransaction", param)
 		if err != nil {
 			fmt.Println("error: get transaction failed, ", err)
 			return err

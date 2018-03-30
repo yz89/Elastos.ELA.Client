@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strconv"
 
-	. "Elastos.ELA.Client/rpc"
+	"github.com/elastos/Elastos.ELA.Client/rpc"
 
 	"github.com/urfave/cli"
 )

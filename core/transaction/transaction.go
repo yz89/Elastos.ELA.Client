@@ -7,11 +7,11 @@ import (
 	"errors"
 	"crypto/sha256"
 
-	"Elastos.ELA.Client/crypto"
-	. "Elastos.ELA.Client/common"
-	"Elastos.ELA.Client/common/serialization"
-	"Elastos.ELA.Client/core/program"
-	"Elastos.ELA.Client/core/transaction/payload"
+	"github.com/elastos/Elastos.ELA.Client/crypto"
+	. "github.com/elastos/Elastos.ELA.Client/common"
+	"github.com/elastos/Elastos.ELA.Client/common/serialization"
+	"github.com/elastos/Elastos.ELA.Client/core/program"
+	"github.com/elastos/Elastos.ELA.Client/core/transaction/payload"
 )
 
 //for different transaction types with different payload format
