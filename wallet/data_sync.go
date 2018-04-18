@@ -2,9 +2,11 @@ package wallet
 
 import (
 	"fmt"
+
 	. "github.com/elastos/Elastos.ELA.Client/rpc"
-	. "github.com/elastos/Elastos.ELA.Client/common"
-	tx "github.com/elastos/Elastos.ELA.Client/core/transaction"
+
+	. "github.com/elastos/Elastos.ELA.Utility/core"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
 )
 
 type DataSync interface {
@@ -89,13 +91,13 @@ func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
 				txHashBytes, _ := HexStringToBytesReverse(txn.Hash)
 				referTxHash, _ := Uint256FromBytes(txHashBytes)
 				lockTime := output.OutputLock
-				if txn.TxType == tx.CoinBase {
+				if txn.TxType == CoinBase {
 					lockTime = block.BlockData.Height + 100
 				}
 				amount, _ := StringToFixed64(output.Value)
 				// Save UTXO input to data store
 				addressUTXO := &AddressUTXO{
-					Op:       tx.NewOutPoint(*referTxHash, uint16(index)),
+					Op:       NewOutPoint(*referTxHash, uint16(index)),
 					Amount:   amount,
 					LockTime: lockTime,
 				}
@@ -107,7 +109,7 @@ func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
 		for _, input := range txn.UTXOInputs {
 			txHashBytes, _ := HexStringToBytesReverse(input.ReferTxID)
 			referTxID, _ := Uint256FromBytes(txHashBytes)
-			sync.DeleteUTXO(tx.NewOutPoint(*referTxID, input.ReferTxOutputIndex))
+			sync.DeleteUTXO(NewOutPoint(*referTxID, input.ReferTxOutputIndex))
 		}
 	}
 }

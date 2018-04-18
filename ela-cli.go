@@ -7,7 +7,7 @@ import (
 	"github.com/elastos/Elastos.ELA.Client/cli/info"
 	"github.com/elastos/Elastos.ELA.Client/cli/wallet"
 	"github.com/elastos/Elastos.ELA.Client/cli/mine"
-	"github.com/elastos/Elastos.ELA.Client/common/log"
+	"github.com/elastos/Elastos.ELA.Client/log"
 	cliLog "github.com/elastos/Elastos.ELA.Client/cli/log"
 	"github.com/urfave/cli"
 )

@@ -6,9 +6,8 @@ import (
 	"errors"
 
 	"github.com/elastos/Elastos.ELA.Client/wallet"
-	. "github.com/elastos/Elastos.ELA.Client/common"
-	"github.com/elastos/Elastos.ELA.Client/common/log"
-	"github.com/elastos/Elastos.ELA.Client/common/password"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.Client/log"
 
 	"github.com/urfave/cli"
 )
@@ -25,9 +24,7 @@ func printLine() {
 }
 
 func createWallet(name string, password []byte) error {
-
 	password = getPassword(password, true)
-	defer ClearBytes(password, len(password))
 
 	_, err := wallet.Create(name, password)
 	if err != nil {
@@ -43,7 +40,6 @@ func changePassword(name string, password []byte, wallet wallet.Wallet) error {
 	if err != nil {
 		return err
 	}
-	defer ClearBytes(oldPassword, len(oldPassword))
 
 	// Input new password
 	fmt.Println("# input new password #")
@@ -51,7 +47,6 @@ func changePassword(name string, password []byte, wallet wallet.Wallet) error {
 	if err := wallet.ChangePassword(oldPassword, newPassword); err != nil {
 		return errors.New("failed to change password")
 	}
-	defer ClearBytes(newPassword, len(newPassword))
 
 	fmt.Println("password changed successful")
 
@@ -60,7 +55,6 @@ func changePassword(name string, password []byte, wallet wallet.Wallet) error {
 
 func showAccountInfo(name string, password []byte) error {
 	password = getPassword(password, false)
-	defer ClearBytes(password, len(password))
 
 	keyStore, err := wallet.OpenKeystore(name, password)
 	if err != nil {
@@ -74,7 +68,7 @@ func showAccountInfo(name string, password []byte) error {
 	printLine()
 	fmt.Println("Address:     ", address)
 	fmt.Println("Public Key:  ", BytesToHexString(publicKeyBytes))
-	fmt.Println("ProgramHash: ", BytesToHexString(programHash.ToArrayReverse()))
+	fmt.Println("ProgramHash: ", BytesToHexString(BytesReverse(programHash.Bytes())))
 	printLine()
 
 	return nil
@@ -99,7 +93,7 @@ func listBalanceInfo(wallet wallet.Wallet) error {
 			balance += *utxo.Amount
 		}
 		fmt.Println("Address:     ", address.Address)
-		fmt.Println("ProgramHash: ", BytesToHexString(address.ProgramHash.ToArrayReverse()))
+		fmt.Println("ProgramHash: ", BytesToHexString(BytesReverse(address.ProgramHash.Bytes())))
 		fmt.Println("Balance:     ", balance.String())
 
 		printLine()
@@ -114,9 +108,9 @@ func getPassword(passwd []byte, confirmed bool) []byte {
 		tmp = []byte(passwd)
 	} else {
 		if confirmed {
-			tmp, err = password.GetConfirmedPassword()
+			tmp, err = GetConfirmedPassword()
 		} else {
-			tmp, err = password.GetPassword()
+			tmp, err = GetPassword()
 		}
 		if err != nil {
 			fmt.Println(err)

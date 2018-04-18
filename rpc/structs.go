@@ -1,14 +1,14 @@
 package rpc
 
 import (
-	. "github.com/elastos/Elastos.ELA.Client/common"
-	. "github.com/elastos/Elastos.ELA.Client/core/transaction"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	. "github.com/elastos/Elastos.ELA.Utility/core"
 )
 
 type PayloadInfo interface{}
 
 type TxAttributeInfo struct {
-	Usage TransactionAttributeUsage
+	Usage AttributeUsage
 	Data  string
 }
 

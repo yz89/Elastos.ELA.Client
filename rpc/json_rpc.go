@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"encoding/json"
 
-	"github.com/elastos/Elastos.ELA.Client/common/config"
+	"github.com/elastos/Elastos.ELA.Client/config"
 	"errors"
 )
 

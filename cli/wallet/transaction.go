@@ -1,21 +1,22 @@
 package wallet
 
 import (
-	"os"
-	"fmt"
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
 	"strings"
 	"strconv"
-	"io/ioutil"
 
 	. "github.com/elastos/Elastos.ELA.Client/rpc"
-	. "github.com/elastos/Elastos.ELA.Client/common"
-	"github.com/elastos/Elastos.ELA.Client/common/log"
+	"github.com/elastos/Elastos.ELA.Client/log"
 	walt "github.com/elastos/Elastos.ELA.Client/wallet"
-	tx "github.com/elastos/Elastos.ELA.Client/core/transaction"
 
+	. "github.com/elastos/Elastos.ELA.Utility/core"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"github.com/urfave/cli"
 )
 
@@ -60,7 +61,7 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 	}
 
 	lockStr := c.String("lock")
-	var txn *tx.Transaction
+	var txn *Transaction
 	if lockStr == "" {
 		txn, err = wallet.CreateTransaction(from, to, amount, fee)
 		if err != nil {
@@ -92,7 +93,7 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 	}
 
 	scanner := bufio.NewScanner(file)
-	var multiOutput []*walt.Output
+	var multiOutput []*walt.Transfer
 	for scanner.Scan() {
 		columns := strings.Split(scanner.Text(), ",")
 		if len(columns) < 2 {
@@ -104,12 +105,12 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 			return errors.New("invalid multi output transaction amount: " + amountStr)
 		}
 		address := strings.TrimSpace(columns[0])
-		multiOutput = append(multiOutput, &walt.Output{address, amount})
+		multiOutput = append(multiOutput, &walt.Transfer{address, amount})
 		log.Trace("Multi output address:", address, ", amount:", amountStr)
 	}
 
 	lockStr := c.String("lock")
-	var txn *tx.Transaction
+	var txn *Transaction
 	if lockStr == "" {
 		txn, err = wallet.CreateMultiOutputTransaction(from, fee, multiOutput...)
 		if err != nil {
@@ -132,7 +133,7 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 }
 
 func signTransaction(name string, password []byte, context *cli.Context, wallet walt.Wallet) error {
-	defer ClearBytes(password, len(password))
+	defer ClearBytes(password)
 
 	content, err := getTransactionContent(context)
 	if err != nil {
@@ -143,13 +144,16 @@ func signTransaction(name string, password []byte, context *cli.Context, wallet 
 		return errors.New("decode transaction content failed")
 	}
 
-	var txn tx.Transaction
+	var txn Transaction
 	err = txn.Deserialize(bytes.NewReader(rawData))
 	if err != nil {
 		return errors.New("deserialize transaction failed")
 	}
 
-	haveSign, needSign, err := txn.GetSignStatus()
+	code := txn.Programs[0].Code
+	param := txn.Programs[0].Parameter
+
+	haveSign, needSign, err := crypto.GetSignStatus(code, param)
 	if haveSign == needSign {
 		return errors.New("transaction was fully signed, no need more sign")
 	}
@@ -159,7 +163,7 @@ func signTransaction(name string, password []byte, context *cli.Context, wallet 
 		return err
 	}
 
-	haveSign, needSign, _ = txn.GetSignStatus()
+	haveSign, needSign, _ = crypto.GetSignStatus(code, param)
 	fmt.Println("[", haveSign, "/", needSign, "] Transaction successfully signed")
 
 	output(haveSign, needSign, &txn)
@@ -215,7 +219,7 @@ func getTransactionContent(context *cli.Context) (string, error) {
 	return content, nil
 }
 
-func output(haveSign, needSign int, txn *tx.Transaction) error {
+func output(haveSign, needSign int, txn *Transaction) error {
 	// Serialise transaction content
 	buf := new(bytes.Buffer)
 	txn.Serialize(buf)

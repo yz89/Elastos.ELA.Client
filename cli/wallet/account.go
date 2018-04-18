@@ -7,10 +7,10 @@ import (
 	"strings"
 	"io/ioutil"
 
-	"github.com/elastos/Elastos.ELA.Client/crypto"
 	. "github.com/elastos/Elastos.ELA.Client/wallet"
-	. "github.com/elastos/Elastos.ELA.Client/common"
 
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"github.com/urfave/cli"
 )
 
@@ -55,7 +55,7 @@ func addMultiSignAccount(context *cli.Context, wallet Wallet, content string) er
 		return errors.New("M must be greater than half number of public keys, less than number of public keys")
 	}
 
-	programHash, err := wallet.AddMultiSignAccount(M, publicKeys...)
+	programHash, err := wallet.AddMultiSignAccount(uint(M), publicKeys...)
 	if err != nil {
 		return err
 	}
