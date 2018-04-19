@@ -23,7 +23,17 @@ func miningAction(c *cli.Context) error {
 			return errors.New("toggle argument must be [start, stop]")
 		}
 
-		result, err := CallAndUnmarshal("togglemining", Param("mining", action))
+		var boolAction bool
+
+		if action == "start" {
+			boolAction = true
+		}
+
+		if action == "stop" {
+			boolAction = false
+		}
+
+		result, err := CallAndUnmarshal("togglemining", Param("mining", boolAction))
 		if err != nil {
 			return err
 		}

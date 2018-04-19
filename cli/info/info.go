@@ -45,6 +45,16 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
+	if c.Bool("getbestblockhash") {
+		result, err := CallAndUnmarshal("getbestblockhash", nil)
+		if err != nil {
+			fmt.Println("error: get best block hash failed, ", err)
+			return err
+		}
+		fmt.Println(result)
+		return nil
+	}
+
 	if c.Bool("currentheight") {
 		result, err := CallAndUnmarshal("getcurrentheight", nil)
 		if err != nil {
@@ -92,7 +102,7 @@ func infoAction(c *cli.Context) error {
 	}
 
 	if c.Bool("showtxpool") {
-		result, err := CallAndUnmarshal("gettransactionpool", nil)
+		result, err := CallAndUnmarshal("getrawmempool", nil)
 		if err != nil {
 			fmt.Println("error: get transaction pool failed, ", err)
 			return err
@@ -126,6 +136,11 @@ func NewCommand() *cli.Command {
 			cli.BoolFlag{
 				Name:  "currentheight, height",
 				Usage: "show blockchain height on current node",
+			},
+
+			cli.BoolFlag{
+				Name:  "getbestblockhash",
+				Usage: "show latest block hash",
 			},
 			cli.Int64Flag{
 				Name:  "getblockhash, blockh",
