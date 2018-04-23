@@ -38,29 +38,7 @@ type ProgramInfo struct {
 	Parameter string
 }
 
-type TxoutputMap struct {
-	Key   Uint256
-	Txout []TxoutputInfo
-}
-
-type AmountMap struct {
-	Key   Uint256
-	Value Fixed64
-}
-
-type BlockHead struct {
-	Version          uint32
-	PrevBlockHash    string
-	TransactionsRoot string
-	Timestamp        uint32
-	Bits             uint32
-	Height           uint32
-	Nonce            uint32
-
-	Hash string
-}
-
-type TransactionInfo struct {
+type TxInfo struct {
 	TxType         TransactionType
 	PayloadVersion byte
 	Payload        PayloadInfo
@@ -71,9 +49,6 @@ type TransactionInfo struct {
 	LockTime       uint32
 	Programs       []ProgramInfo
 
-	AssetOutputs      []TxoutputMap
-	AssetInputAmount  []AmountMap
-	AssetOutputAmount []AmountMap
 	Timestamp         uint32 `json:",omitempty"`
 	Confirminations   uint32 `json:",omitempty"`
 	TxSize            uint32 `json:",omitempty"`
@@ -81,9 +56,16 @@ type TransactionInfo struct {
 }
 
 type BlockInfo struct {
-	Hash            string
-	BlockData       *BlockHead
-	Transactions    []*TransactionInfo
-	Confirminations uint32
-	MinerInfo       string
+	Hash              string   `json:"hash"`
+	Confirmations     uint32   `json:"confirmations"`
+	Size              uint32   `json:"size"`
+	Height            uint32   `json:"height"`
+	Version           uint32   `json:"version"`
+	Merkleroot        string   `json:"merkleroot"`
+	Time              uint32   `json:"time"`
+	Nonce             uint32   `json:"nonce"`
+	Difficulty        string   `json:"difficulty"`
+	Bits              uint32   `json:"bits"`
+	Previousblockhash string   `json:"Previousblockhash"`
+	Tx                []string `json:"tx"`
 }

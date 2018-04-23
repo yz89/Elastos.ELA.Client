@@ -3,6 +3,8 @@ package wallet
 import (
 	"fmt"
 
+
+	"github.com/elastos/Elastos.ELA.Client/log"
 	. "github.com/elastos/Elastos.ELA.Client/rpc"
 
 	. "github.com/elastos/Elastos.ELA/core"
@@ -46,7 +48,7 @@ func (sync *DataSyncImpl) SyncChainData() {
 			sync.processBlock(block)
 
 			// Update wallet height
-			currentHeight = sync.CurrentHeight(block.BlockData.Height + 1)
+			currentHeight = sync.CurrentHeight(block.Header.Height + 1)
 
 			fmt.Print(">")
 		}
@@ -62,7 +64,11 @@ func (sync *DataSyncImpl) needSyncBlocks() (uint32, uint32, bool) {
 		return 0, 0, false
 	}
 
+	log.Debug("Sync chain height: ", chainHeight)
+
 	currentHeight := sync.CurrentHeight(QueryHeightCode)
+
+	log.Debug("Sync wallet height: ", currentHeight)
 
 	if currentHeight >= chainHeight+1 {
 		return chainHeight, currentHeight, false
@@ -81,6 +87,7 @@ func (sync *DataSyncImpl) containAddress(address string) (*Address, bool) {
 }
 
 func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
+	log.Debug("Sync process block: ", block)
 	// Add UTXO to wallet address from transaction outputs
 	for _, txn := range block.Transactions {
 
@@ -92,7 +99,7 @@ func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
 				referTxHash, _ := Uint256FromBytes(txHashBytes)
 				lockTime := output.OutputLock
 				if txn.TxType == CoinBase {
-					lockTime = block.BlockData.Height + 100
+					lockTime = block.Header.Height + 100
 				}
 				amount, _ := StringToFixed64(output.Value)
 				// Save UTXO input to data store

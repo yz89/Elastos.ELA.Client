@@ -1,19 +1,27 @@
 package rpc
 
 import (
-	"fmt"
-	"strings"
-	"net/http"
-	"io/ioutil"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
 
 	"github.com/elastos/Elastos.ELA.Client/config"
-	"errors"
 )
 
 type Response struct {
-	Code   int         `json:"code"`
-	Result interface{} `json:"result"`
+	ID      int64       `json:"id"`
+	Version string      `json:"jsonrpc"`
+	*Error              `json:"error"`
+	Result  interface{} `json:"result"`
+}
+
+type Error struct {
+	ID      int64  `json:"id"`
+	Code    int64  `json:"code"`
+	Message string `json:"message"`
 }
 
 var url string
@@ -37,7 +45,7 @@ func GetBlockByHeight(height uint32) (*BlockInfo, error) {
 	return block, nil
 }
 
-func Call(method string, params map[string]string) ([]byte, error) {
+func Call(method string, params map[string]interface{}) ([]byte, error) {
 	if url == "" {
 		url = "http://" + config.Params().Host
 	}
@@ -49,6 +57,7 @@ func Call(method string, params map[string]string) ([]byte, error) {
 		return nil, err
 	}
 
+	//fmt.Println("Request:", string(data))
 	resp, err := http.Post(url, "application/json", strings.NewReader(string(data)))
 	if err != nil {
 		fmt.Printf("POST requset: %v\n", err)
@@ -60,24 +69,25 @@ func Call(method string, params map[string]string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	//fmt.Println("Response:", string(body))
 
 	return body, nil
 }
 
-func CallAndUnmarshal(method string, params map[string]string) (interface{}, error) {
+func CallAndUnmarshal(method string, params map[string]interface{}) (interface{}, error) {
 	body, err := Call(method, params)
 	if err != nil {
 		return nil, err
 	}
 
-	resp := Response{}
+	var resp Response
 	err = json.Unmarshal(body, &resp)
 	if err != nil {
 		return string(body), nil
 	}
 
-	if resp.Code != 0 {
-		return nil, errors.New(fmt.Sprint(resp.Result))
+	if resp.Error != nil {
+		return nil, errors.New(resp.Error.Message)
 	}
 
 	return resp.Result, nil
