@@ -18,7 +18,7 @@ func infoAction(c *cli.Context) error {
 	if c.Bool("connections") {
 		result, err := CallAndUnmarshal("getconnectioncount", nil)
 		if err != nil {
-			fmt.Println("error: get node connections failed, ", err)
+			fmt.Println("error: get node connections failed,", err)
 			return err
 		}
 		fmt.Println(result)
@@ -28,7 +28,7 @@ func infoAction(c *cli.Context) error {
 	if c.Bool("neighbor") {
 		result, err := CallAndUnmarshal("getneighbors", nil)
 		if err != nil {
-			fmt.Println("error: get node neighbors info failed, ", err)
+			fmt.Println("error: get node neighbors info failed,", err)
 			return err
 		}
 		fmt.Println(result)
@@ -38,17 +38,7 @@ func infoAction(c *cli.Context) error {
 	if c.Bool("state") {
 		result, err := CallAndUnmarshal("getnodestate", nil)
 		if err != nil {
-			fmt.Println("error: get node state info failed, ", err)
-			return err
-		}
-		fmt.Println(result)
-		return nil
-	}
-
-	if c.Bool("getbestblockhash") {
-		result, err := CallAndUnmarshal("getbestblockhash", nil)
-		if err != nil {
-			fmt.Println("error: get best block hash failed, ", err)
+			fmt.Println("error: get node state info failed,", err)
 			return err
 		}
 		fmt.Println(result)
@@ -58,17 +48,27 @@ func infoAction(c *cli.Context) error {
 	if c.Bool("currentheight") {
 		result, err := CallAndUnmarshal("getcurrentheight", nil)
 		if err != nil {
-			fmt.Println("error: get block count failed, ", err)
+			fmt.Println("error: get block count failed,", err)
 			return err
 		}
 		fmt.Println(result)
 		return nil
 	}
 
-	if height := c.Int64("getblockhash"); height >= 0 {
-		result, err := CallAndUnmarshal("getblockhash", Param("height", height))
+	if c.Bool("getbestblockhash") {
+		result, err := CallAndUnmarshal("getbestblockhash", nil)
 		if err != nil {
-			fmt.Println("error: get block hash failed, ", err)
+			fmt.Println("error: get best block hash failed,", err)
+			return err
+		}
+		fmt.Println(result)
+		return nil
+	}
+
+	if index := c.Int64("getblockhash"); index >= 0 {
+		result, err := CallAndUnmarshal("getblockhash", Param("index", index))
+		if err != nil {
+			fmt.Println("error: get block hash failed,", err)
 			return err
 		}
 		fmt.Println(result.(string))
@@ -76,15 +76,19 @@ func infoAction(c *cli.Context) error {
 	}
 
 	if param := c.String("getblock"); param != "" {
-		height, err := strconv.ParseInt(param, 10, 64)
+		index, err := strconv.ParseInt(param, 10, 64)
 		var result interface{}
 		if err == nil {
-			result, err = CallAndUnmarshal("getblockbyheight", Param("height", height))
-		} else {
-			result, err = CallAndUnmarshal("getblockbyhash", Param("hash", param))
+			result, err = CallAndUnmarshal("getblockhash", Param("index", index))
+			if err != nil {
+				fmt.Println("error: get block failed,", err)
+				return err
+			}
+			param = result.(string)
 		}
+		result, err = CallAndUnmarshal("getblock", Param("hash", param))
 		if err != nil {
-			fmt.Println("error: get block failed, ", err)
+			fmt.Println("error: get block failed,", err)
 			return err
 		}
 		fmt.Println(result)
@@ -94,7 +98,7 @@ func infoAction(c *cli.Context) error {
 	if param := c.String("gettransaction"); param != "" {
 		result, err := CallAndUnmarshal("getrawtransaction", Param("hash", param))
 		if err != nil {
-			fmt.Println("error: get transaction failed, ", err)
+			fmt.Println("error: get transaction failed,", err)
 			return err
 		}
 		fmt.Println(result)
@@ -104,7 +108,7 @@ func infoAction(c *cli.Context) error {
 	if c.Bool("showtxpool") {
 		result, err := CallAndUnmarshal("getrawmempool", nil)
 		if err != nil {
-			fmt.Println("error: get transaction pool failed, ", err)
+			fmt.Println("error: get transaction pool failed,", err)
 			return err
 		}
 		fmt.Println(result)
@@ -131,16 +135,15 @@ func NewCommand() *cli.Command {
 			},
 			cli.BoolFlag{
 				Name:  "state",
-				Usage: "show current node statues",
+				Usage: "show current node status",
 			},
 			cli.BoolFlag{
 				Name:  "currentheight, height",
 				Usage: "show blockchain height on current node",
 			},
-
 			cli.BoolFlag{
 				Name:  "getbestblockhash",
-				Usage: "show latest block hash",
+				Usage: "show best block hash",
 			},
 			cli.Int64Flag{
 				Name:  "getblockhash, blockh",
@@ -157,7 +160,7 @@ func NewCommand() *cli.Command {
 			},
 			cli.BoolFlag{
 				Name:  "showtxpool, txpool",
-				Usage: "show the transactions in node's transaction pool",
+				Usage: "show transactions in node's transaction pool",
 			},
 		},
 		Action: infoAction,

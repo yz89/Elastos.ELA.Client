@@ -35,6 +35,7 @@ func miningAction(c *cli.Context) error {
 
 		result, err := CallAndUnmarshal("togglemining", Param("mining", boolAction))
 		if err != nil {
+			fmt.Println("[toggle] mining falied:", err)
 			return err
 		}
 
