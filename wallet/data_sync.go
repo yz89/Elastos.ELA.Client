@@ -5,7 +5,7 @@ import (
 
 	. "github.com/elastos/Elastos.ELA.Client/rpc"
 
-	. "github.com/elastos/Elastos.ELA.Utility/core"
+	. "github.com/elastos/Elastos.ELA/core"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 )
 
@@ -88,7 +88,7 @@ func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
 		for index, output := range txn.Outputs {
 			if addr, ok := sync.containAddress(output.Address); ok {
 				// Create UTXO input from output
-				txHashBytes, _ := HexStringToBytesReverse(txn.Hash)
+				txHashBytes, _ := HexStringToBytes(txn.Hash)
 				referTxHash, _ := Uint256FromBytes(txHashBytes)
 				lockTime := output.OutputLock
 				if txn.TxType == CoinBase {
@@ -107,7 +107,7 @@ func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
 
 		// Delete UTXOs from wallet by transaction inputs
 		for _, input := range txn.UTXOInputs {
-			txHashBytes, _ := HexStringToBytesReverse(input.ReferTxID)
+			txHashBytes, _ := HexStringToBytes(input.ReferTxID)
 			referTxID, _ := Uint256FromBytes(txHashBytes)
 			sync.DeleteUTXO(NewOutPoint(*referTxID, input.ReferTxOutputIndex))
 		}
