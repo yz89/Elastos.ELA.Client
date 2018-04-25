@@ -14,7 +14,7 @@ import (
 	"github.com/elastos/Elastos.ELA.Client/log"
 	walt "github.com/elastos/Elastos.ELA.Client/wallet"
 
-	. "github.com/elastos/Elastos.ELA.Utility/core"
+	. "github.com/elastos/Elastos.ELA/core"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"github.com/urfave/cli"

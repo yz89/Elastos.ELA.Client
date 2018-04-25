@@ -6,9 +6,9 @@ import (
 	"errors"
 
 	"github.com/elastos/Elastos.ELA.Client/wallet"
-	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Client/log"
 
+	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/urfave/cli"
 )
 
