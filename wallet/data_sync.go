@@ -1,8 +1,9 @@
 package wallet
 
 import (
+	"encoding/json"
 	"fmt"
-
+	"os"
 
 	"github.com/elastos/Elastos.ELA.Client/log"
 	. "github.com/elastos/Elastos.ELA.Client/rpc"
@@ -41,14 +42,20 @@ func (sync *DataSyncImpl) SyncChainData() {
 		}
 
 		for currentHeight <= chainHeight {
-			block, err := GetBlockByHeight(currentHeight)
+			hash, err := GetBlockHash(currentHeight)
 			if err != nil {
-				break
+				log.Error("Get block hash failed at height:", currentHeight, "error:", err)
+				os.Exit(1)
+			}
+			block, err := GetBlock(hash)
+			if err != nil {
+				log.Error("Get block failed at height:", currentHeight, "error:", err)
+				os.Exit(1)
 			}
 			sync.processBlock(block)
 
 			// Update wallet height
-			currentHeight = sync.CurrentHeight(block.Header.Height + 1)
+			currentHeight = sync.CurrentHeight(block.Height + 1)
 
 			fmt.Print(">")
 		}
@@ -59,16 +66,12 @@ func (sync *DataSyncImpl) SyncChainData() {
 
 func (sync *DataSyncImpl) needSyncBlocks() (uint32, uint32, bool) {
 
-	chainHeight, err := GetCurrentHeight()
+	chainHeight, err := GetChainHeight()
 	if err != nil {
 		return 0, 0, false
 	}
 
-	log.Debug("Sync chain height: ", chainHeight)
-
 	currentHeight := sync.CurrentHeight(QueryHeightCode)
-
-	log.Debug("Sync wallet height: ", currentHeight)
 
 	if currentHeight >= chainHeight+1 {
 		return chainHeight, currentHeight, false
@@ -87,19 +90,28 @@ func (sync *DataSyncImpl) containAddress(address string) (*Address, bool) {
 }
 
 func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
-	log.Debug("Sync process block: ", block)
 	// Add UTXO to wallet address from transaction outputs
-	for _, txn := range block.Transactions {
-
+	for _, txInfo := range block.Tx {
+		data, err := json.Marshal(txInfo)
+		if err != nil {
+			log.Error("Resolve transaction info failed")
+			os.Exit(1)
+		}
+		var tx TransactionInfo
+		err = json.Unmarshal(data, &tx)
+		if err != nil {
+			log.Error("Resolve transaction info failed")
+			os.Exit(1)
+		}
 		// Add UTXOs to wallet address from transaction outputs
-		for index, output := range txn.Outputs {
+		for index, output := range tx.Outputs {
 			if addr, ok := sync.containAddress(output.Address); ok {
 				// Create UTXO input from output
-				txHashBytes, _ := HexStringToBytes(txn.Hash)
+				txHashBytes, _ := HexStringToBytes(tx.Hash)
 				referTxHash, _ := Uint256FromBytes(txHashBytes)
 				lockTime := output.OutputLock
-				if txn.TxType == CoinBase {
-					lockTime = block.Header.Height + 100
+				if tx.TxType == CoinBase {
+					lockTime = block.Height + 100
 				}
 				amount, _ := StringToFixed64(output.Value)
 				// Save UTXO input to data store
@@ -113,10 +125,10 @@ func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
 		}
 
 		// Delete UTXOs from wallet by transaction inputs
-		for _, input := range txn.UTXOInputs {
-			txHashBytes, _ := HexStringToBytes(input.ReferTxID)
+		for _, input := range tx.Inputs {
+			txHashBytes, _ := HexStringToBytes(input.TxID)
 			referTxID, _ := Uint256FromBytes(txHashBytes)
-			sync.DeleteUTXO(NewOutPoint(*referTxID, input.ReferTxOutputIndex))
+			sync.DeleteUTXO(NewOutPoint(*referTxID, input.VOut))
 		}
 	}
 }

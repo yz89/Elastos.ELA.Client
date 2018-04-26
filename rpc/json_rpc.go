@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/elastos/Elastos.ELA.Client/config"
+
+	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
 type Response struct {
@@ -26,7 +28,7 @@ type Error struct {
 
 var url string
 
-func GetCurrentHeight() (uint32, error) {
+func GetChainHeight() (uint32, error) {
 	result, err := CallAndUnmarshal("getcurrentheight", nil)
 	if err != nil {
 		return 0, err
@@ -34,8 +36,22 @@ func GetCurrentHeight() (uint32, error) {
 	return uint32(result.(float64)), nil
 }
 
-func GetBlockByHeight(height uint32) (*BlockInfo, error) {
-	resp, err := CallAndUnmarshal("getblockbyheight", Param("height", height))
+func GetBlockHash(height uint32) (*common.Uint256, error) {
+	result, err := CallAndUnmarshal("getblockhash", Param("index", height))
+	if err != nil {
+		return nil, err
+	}
+
+	hashBytes, err := common.HexStringToBytes(result.(string))
+	if err != nil {
+		return nil, err
+	}
+	return common.Uint256FromBytes(hashBytes)
+}
+
+func GetBlock(hash *common.Uint256) (*BlockInfo, error) {
+	resp, err := CallAndUnmarshal("getblock",
+		Param("hash", hash.String()).Add("format", 2))
 	if err != nil {
 		return nil, err
 	}

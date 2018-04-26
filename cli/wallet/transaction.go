@@ -10,7 +10,7 @@ import (
 	"strings"
 	"strconv"
 
-	. "github.com/elastos/Elastos.ELA.Client/rpc"
+	"github.com/elastos/Elastos.ELA.Client/rpc"
 	"github.com/elastos/Elastos.ELA.Client/log"
 	walt "github.com/elastos/Elastos.ELA.Client/wallet"
 
@@ -177,7 +177,7 @@ func sendTransaction(context *cli.Context) error {
 		return err
 	}
 
-	result, err := CallAndUnmarshal("sendrawtransaction", Param("Data", content))
+	result, err := rpc.CallAndUnmarshal("sendrawtransaction", rpc.Param("Data", content))
 	if err != nil {
 		return err
 	}

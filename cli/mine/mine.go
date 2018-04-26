@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	. "github.com/elastos/Elastos.ELA.Client/rpc"
+	"github.com/elastos/Elastos.ELA.Client/rpc"
 
 	"github.com/urfave/cli"
 )
@@ -33,7 +33,7 @@ func miningAction(c *cli.Context) error {
 			boolAction = false
 		}
 
-		result, err := CallAndUnmarshal("togglemining", Param("mining", boolAction))
+		result, err := rpc.CallAndUnmarshal("togglemining", rpc.Param("mining", boolAction))
 		if err != nil {
 			fmt.Println("[toggle] mining falied:", err)
 			return err
@@ -48,7 +48,7 @@ func miningAction(c *cli.Context) error {
 		if err != nil || number < 1 {
 			return errors.New("[number] must be a positive integer")
 		}
-		result, err := CallAndUnmarshal("manualmining", Param("count", number))
+		result, err := rpc.CallAndUnmarshal("manualmining", rpc.Param("count", number))
 		if err != nil {
 			return err
 		}
