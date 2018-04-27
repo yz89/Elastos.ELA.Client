@@ -83,6 +83,7 @@ go install github.com/elastos/Elastos.ELA.Client/vendor/github.com/mattn/go-sqli
 
 Run `make` to build the executable files `ela-cli`
 
+## Run on Mac
 ## Build on Ubuntu
 
 ### Check OS version
@@ -147,7 +148,7 @@ If you cannot see the version number, there must be something wrong when install
 ### Clone source code to $GOPATH/src/github.com/elastos/ folder
 Make sure you are in the folder of `$GOPATH/src/github.com/elastos/`
 ```shell
-$ go clone https://github.com/elastos/Elastos.ELA.Client.git
+$ git clone https://github.com/elastos/Elastos.ELA.Client.git
 ```
 
 If clone works successfully, you should see folder structure like $GOPATH/src/github.com/elastos/Elastos.ELA.Client/Makefile
@@ -180,7 +181,7 @@ A file named `cli-config.json` should be placed in the same folder with `ela-cli
 so mostly IP is set to `localhost` and `Port` value is according to the `HttpJsonPort` value set in the node `config.json` file.
 
 ### See node info
-As the node is running, you can check it's status by using `info` commands.
+As the node is running, you can ge information from it by using `info` commands.
 ```shell
 $ ./ela-cli info
 NAME:
@@ -194,8 +195,8 @@ DESCRIPTION:
 
 OPTIONS:
    --connections                         see how many peers are connected with current node
-   --neighbors, --nbr                    show neighbor nodes information
-   --state                               show current node statues
+   --neighbor, --nbr                     show neighbor nodes information
+   --state                               show current node status
    --currentheight, --height             show blockchain height on current not
    --getblockhash value, --blockh value  query a block's hash with it's height (default: -1)
    --getblock value, --block value       query a block with height or it's hash
@@ -241,7 +242,7 @@ OPTIONS:
 ```
 
 ### Wallet
-This is the light implementation of the Elastos digital currency, you can use it create your ELA account, check account balance and build, sign and send transactions.
+For test purpose, this command line client implemented a simplified wallet program. You can use it to create your ELA account, check account balance and build, sign or send transactions.
 #### Tips
 > for some reason, when using multiple command options, the option with no arguments must be put at the last, for example
 `$ ./ela-cli wallet --name my_wallet.dat --password Elastos --create`, in this case, `--create` must be put at the last, or the command will no work correctly.

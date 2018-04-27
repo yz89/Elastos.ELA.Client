@@ -3,7 +3,7 @@ package log
 import (
 	"fmt"
 
-	. "github.com/elastos/Elastos.ELA.Client/rpc"
+	"github.com/elastos/Elastos.ELA.Client/rpc"
 
 	"github.com/urfave/cli"
 )
@@ -15,7 +15,7 @@ func debugAction(c *cli.Context) error {
 	}
 
 	if level := c.Int("level"); level >= 0 {
-		result, err := CallAndUnmarshal("setloglevel", Param("level", level))
+		result, err := rpc.CallAndUnmarshal("setloglevel", rpc.Param("level", level))
 		if err != nil {
 			fmt.Println("error: set debug info failed, ", err)
 			return err
