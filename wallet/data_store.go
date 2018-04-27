@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"os"
 	"math"
 	"sync"
 	"bytes"
@@ -113,11 +112,11 @@ func initDB() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	stmt, err := db.Prepare("INSERT INTO Info(Name, Value) values(?,?)")
+	sql := `INSERT INTO Info(Name, Value) SELECT ?,? WHERE NOT EXISTS(SELECT 1 FROM Info WHERE Name=?)`
+	_, err = db.Exec(sql, "Height", uint32(0), "Height")
 	if err != nil {
 		return nil, err
 	}
-	stmt.Exec("Height", uint32(0))
 
 	return db, nil
 }
@@ -131,24 +130,14 @@ func (store *DataStoreImpl) catchSystemSignals() {
 
 func (store *DataStoreImpl) ResetDataStore() error {
 
-	addresses, err := store.GetAddresses()
+	_, err := store.Exec("DROP TABLE Info IF EXISTS")
 	if err != nil {
 		return err
 	}
 
-	store.DB.Close()
-	os.Remove(DBName)
-
-	store.DB, err = initDB()
+	_, err = store.Exec("DROP TABLE UTXOs IF EXISTS")
 	if err != nil {
 		return err
-	}
-
-	for _, address := range addresses {
-		err = store.AddAddress(address.ProgramHash, address.RedeemScript)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -168,11 +157,7 @@ func (store *DataStoreImpl) CurrentHeight(height uint32) uint32 {
 			height = 0
 		}
 		// Insert current height
-		stmt, err := store.Prepare("UPDATE Info SET Value=? WHERE Name=?")
-		if err != nil {
-			return uint32(0)
-		}
-		_, err = stmt.Exec(height, "Height")
+		_, err := store.Exec("UPDATE Info SET Value=? WHERE Name=?", height, "Height")
 		if err != nil {
 			return uint32(0)
 		}
@@ -185,11 +170,8 @@ func (store *DataStoreImpl) AddAddress(programHash *Uint168, redeemScript []byte
 	store.Lock()
 	defer store.Unlock()
 
-	stmt, err := store.Prepare("INSERT INTO Addresses(ProgramHash, RedeemScript) values(?,?)")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(programHash.Bytes(), redeemScript)
+	sql := "INSERT INTO Addresses(ProgramHash, RedeemScript) values(?,?)"
+	_, err := store.Exec(sql, programHash.Bytes(), redeemScript)
 	if err != nil {
 		return err
 	}
@@ -209,22 +191,13 @@ func (store *DataStoreImpl) DeleteAddress(programHash *Uint168) error {
 	}
 
 	// Delete UTXOs of this address
-	stmt, err := store.Prepare(
-		"DELETE FROM UTXOs WHERE AddressId=?")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(addressId)
+	_, err = store.Exec("DELETE FROM UTXOs WHERE AddressId=?", addressId)
 	if err != nil {
 		return err
 	}
 
 	// Delete address from address table
-	stmt, err = store.Prepare("DELETE FROM Addresses WHERE Id=?")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(addressId)
+	_, err = store.Exec("DELETE FROM Addresses WHERE Id=?", addressId)
 	if err != nil {
 		return err
 	}
@@ -236,8 +209,7 @@ func (store *DataStoreImpl) GetAddressInfo(programHash *Uint168) (*Address, erro
 	defer store.Unlock()
 
 	// Query address info by it's ProgramHash
-	sql := `SELECT RedeemScript FROM Addresses WHERE ProgramHash=?`
-	row := store.QueryRow(sql, programHash.Bytes())
+	row := store.QueryRow(`SELECT RedeemScript FROM Addresses WHERE ProgramHash=?`, programHash.Bytes())
 	var redeemScript []byte
 	err := row.Scan(&redeemScript)
 	if err != nil {
@@ -294,11 +266,6 @@ func (store *DataStoreImpl) AddAddressUTXO(programHash *Uint168, utxo *AddressUT
 	if err != nil {
 		return err
 	}
-	// Prepare sql statement
-	stmt, err := store.Prepare("INSERT INTO UTXOs(OutPoint, Amount, LockTime, AddressId) values(?,?,?,?)")
-	if err != nil {
-		return err
-	}
 	// Serialize input
 	buf := new(bytes.Buffer)
 	utxo.Op.Serialize(buf)
@@ -308,7 +275,8 @@ func (store *DataStoreImpl) AddAddressUTXO(programHash *Uint168, utxo *AddressUT
 	utxo.Amount.Serialize(buf)
 	amountBytes := buf.Bytes()
 	// Do insert
-	_, err = stmt.Exec(opBytes, amountBytes, utxo.LockTime, addressId)
+	sql := "INSERT INTO UTXOs(OutPoint, Amount, LockTime, AddressId) values(?,?,?,?)"
+	_, err = store.Exec(sql, opBytes, amountBytes, utxo.LockTime, addressId)
 	if err != nil {
 		return err
 	}
@@ -319,17 +287,12 @@ func (store *DataStoreImpl) DeleteUTXO(op *OutPoint) error {
 	store.Lock()
 	defer store.Unlock()
 
-	// Prepare sql statement
-	stmt, err := store.Prepare("DELETE FROM UTXOs WHERE OutPoint=?")
-	if err != nil {
-		return err
-	}
 	// Serialize input
 	buf := new(bytes.Buffer)
 	op.Serialize(buf)
 	opBytes := buf.Bytes()
 	// Do delete
-	_, err = stmt.Exec(opBytes)
+	_, err := store.Exec("DELETE FROM UTXOs WHERE OutPoint=?", opBytes)
 	if err != nil {
 		return err
 	}
