@@ -43,7 +43,7 @@ type Wallet interface {
 	CreateLockedTransaction(fromAddress, toAddress string, amount, fee *Fixed64, lockedUntil uint32) (*Transaction, error)
 	CreateMultiOutputTransaction(fromAddress string, fee *Fixed64, output ...*Transfer) (*Transaction, error)
 	CreateLockedMultiOutputTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, output ...*Transfer) (*Transaction, error)
-	CreateCrossChainTransaction(fromAddress, toAddress string, toPublicKey []byte, amount, fee *Fixed64) (*Transaction, error)
+	CreateCrossChainTransaction(fromAddress, toAddress, crossChainAddress string, amount, fee *Fixed64) (*Transaction, error)
 
 	Sign(name string, password []byte, transaction *Transaction) (*Transaction, error)
 
@@ -150,8 +150,8 @@ func (wallet *WalletImpl) CreateLockedMultiOutputTransaction(fromAddress string,
 	return wallet.createTransaction(fromAddress, fee, lockedUntil, outputs...)
 }
 
-func (wallet *WalletImpl) CreateCrossChainTransaction(fromAddress, toAddress string, toPublicKey []byte, amount, fee *Fixed64) (*Transaction, error) {
-	return wallet.createCrossChainTransaction(fromAddress, fee, uint32(0), &CrossChainOutput{toAddress, amount, toPublicKey})
+func (wallet *WalletImpl) CreateCrossChainTransaction(fromAddress, toAddress, crossChainAddress string, amount, fee *Fixed64) (*Transaction, error) {
+	return wallet.createCrossChainTransaction(fromAddress, fee, uint32(0), &CrossChainOutput{toAddress, amount, crossChainAddress})
 }
 
 	func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, outputs ...*Transfer) (*Transaction, error) {
@@ -231,10 +231,10 @@ func (wallet *WalletImpl) CreateCrossChainTransaction(fromAddress, toAddress str
 		return nil, errors.New("[Wallet], Get spenders account info failed")
 	}
 
-	return wallet.newTransaction(account.RedeemScript, txInputs, txOutputs, tx.TransferAsset), nil
+	return wallet.newTransaction(account.RedeemScript, txInputs, txOutputs, TransferAsset), nil
 }
 
-func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, outputs ...*CrossChainOutput) (*tx.Transaction, error) {
+func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, outputs ...*CrossChainOutput) (*Transaction, error) {
 	// Check if output is valid
 	if outputs == nil || len(outputs) == 0 {
 		return nil, errors.New("[Wallet], Invalid transaction target")
@@ -249,17 +249,17 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 	}
 	// Create transaction outputs
 	var totalOutputAmount = Fixed64(0) // The total amount will be spend
-	var txOutputs []*tx.TxOutput       // The outputs in transaction
+	var txOutputs []*Output       // The outputs in transaction
 	totalOutputAmount += *fee          // Add transaction fee
 
-	txPayload := &payload.TransferCrossChainAsset{}
+	txPayload := &PayloadTransferCrossChainAsset{}
 	txPayload.AddressesMap = make(map[string]uint64)
 	for index, output := range outputs {
 		receiver, err := Uint168FromAddress(output.Address)
 		if err != nil {
 			return nil, errors.New(fmt.Sprint("[Wallet], Invalid receiver address: ", output.Address, ", error: ", err))
 		}
-		txOutput := &tx.TxOutput{
+		txOutput := &Output{
 			AssetID:     SystemAssetId,
 			ProgramHash: *receiver,
 			Value:       *output.Amount,
@@ -279,12 +279,14 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 	availableUTXOs = SortUTXOs(availableUTXOs)        // Sort available UTXOs by value ASC
 
 	// Create transaction inputs
-	var txInputs []*tx.UTXOTxInput // The inputs in transaction
+	var txInputs []*Input // The inputs in transaction
 	for _, utxo := range availableUTXOs {
-		input := &tx.UTXOTxInput{
-			ReferTxID:          utxo.Op.TxID,
-			ReferTxOutputIndex: utxo.Op.Index,
-			Sequence:           utxo.LockTime,
+		input := &Input{
+			Previous: OutPoint{
+				TxID:  utxo.Op.TxID,
+				Index: utxo.Op.Index,
+			},
+			Sequence: utxo.LockTime,
 		}
 		txInputs = append(txInputs, input)
 		if *utxo.Amount < totalOutputAmount {
@@ -293,7 +295,7 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 			totalOutputAmount = 0
 			break
 		} else if *utxo.Amount > totalOutputAmount {
-			change := &tx.TxOutput{
+			change := &Output{
 				AssetID:     SystemAssetId,
 				Value:       *utxo.Amount - totalOutputAmount,
 				OutputLock:  uint32(0),
@@ -313,7 +315,7 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 		return nil, errors.New("[Wallet], Get spenders account info failed")
 	}
 
-	txn := wallet.newTransaction(account.RedeemScript, txInputs, txOutputs, tx.TransferCrossChainAsset)
+	txn := wallet.newTransaction(account.RedeemScript, txInputs, txOutputs, TransferCrossChainAsset)
 	txn.Payload = txPayload
 
 	return txn, nil

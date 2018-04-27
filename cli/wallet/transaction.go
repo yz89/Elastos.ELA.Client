@@ -17,6 +17,7 @@ import (
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	"github.com/urfave/cli"
+	"github.com/elastos/Elastos.ELA.Client/config"
 )
 
 func createTransaction(c *cli.Context, wallet walt.Wallet) error {
