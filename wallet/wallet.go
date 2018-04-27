@@ -469,6 +469,6 @@ func (wallet *WalletImpl) newTransaction(redeemScript []byte, inputs []*Input, o
 		Inputs:     inputs,
 		Outputs:    outputs,
 		Programs:   []*Program{program},
-		LockTime:   wallet.CurrentHeight(QueryHeightCode) - 1,
+		LockTime:   0/*wallet.CurrentHeight(QueryHeightCode) - 1*/,
 	}
 }
