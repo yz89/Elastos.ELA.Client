@@ -8,6 +8,7 @@ import (
 	"github.com/elastos/Elastos.ELA.Client/rpc"
 
 	"github.com/urfave/cli"
+	"strings"
 )
 
 func miningAction(c *cli.Context) error {
@@ -17,15 +18,11 @@ func miningAction(c *cli.Context) error {
 	}
 
 	if action := c.String("toggle"); action != "" {
-		var isMining bool
-		if action == "start" || action == "START" {
-			isMining = true
-		} else if action == "stop" || action == "STOP" {
-			isMining = false
-		} else {
+		action = strings.ToLower(action)
+		if action != "start" && action != "stop" {
 			return errors.New("toggle argument must be [start, stop]")
 		}
-		result, err := rpc.CallAndUnmarshal("togglecpumining", isMining)
+		result, err := rpc.CallAndUnmarshal("togglemining", rpc.Param("mining", action))
 		if err != nil {
 			return err
 		}
@@ -35,11 +32,11 @@ func miningAction(c *cli.Context) error {
 	}
 
 	if num := c.String("number"); num != "" {
-		number, err := strconv.ParseInt(num, 10, 16)
+		number, err := strconv.ParseInt(num, 10, 64)
 		if err != nil || number < 1 {
 			return errors.New("[number] must be a positive integer")
 		}
-		result, err := rpc.CallAndUnmarshal("discretemining", number)
+		result, err := rpc.CallAndUnmarshal("manualmining", rpc.Param("count", number))
 		if err != nil {
 			return err
 		}

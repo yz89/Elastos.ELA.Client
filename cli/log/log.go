@@ -15,7 +15,7 @@ func debugAction(c *cli.Context) error {
 	}
 
 	if level := c.Int("level"); level != -1 {
-		result, err := rpc.CallAndUnmarshal("setdebuginfo", level)
+		result, err := rpc.CallAndUnmarshal("setdebuginfo", rpc.Param("level", level))
 		if err != nil {
 			fmt.Println("error: set debug info failed, ", err)
 			return err

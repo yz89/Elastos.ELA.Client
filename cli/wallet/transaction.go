@@ -173,7 +173,7 @@ func sendTransaction(context *cli.Context) error {
 		return err
 	}
 
-	result, err := rpc.CallAndUnmarshal("sendrawtransaction", content)
+	result, err := rpc.CallAndUnmarshal("sendrawtransaction", rpc.Param("Data", content))
 	if err != nil {
 		return err
 	}

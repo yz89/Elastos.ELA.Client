@@ -2,10 +2,12 @@ package wallet
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/elastos/Elastos.ELA.Client/rpc"
 	. "github.com/elastos/Elastos.ELA.Client/common"
 	tx "github.com/elastos/Elastos.ELA.Client/core/transaction"
+	"github.com/cheggaaa/pb"
 )
 
 type DataSync interface {
@@ -36,34 +38,33 @@ func (sync *DataSyncImpl) SyncChainData() {
 		if !needSync {
 			break
 		}
-
+		bar := pb.StartNew(int(chainHeight - currentHeight + 1))
 		for currentHeight <= chainHeight {
 			block, err := rpc.GetBlockByHeight(currentHeight)
 			if err != nil {
-				break
+				fmt.Println("Get block error on height:", currentHeight, "error:", err)
+				os.Exit(1)
 			}
 			sync.processBlock(block)
 
 			// Update wallet height
 			currentHeight = sync.CurrentHeight(block.BlockData.Height + 1)
-
-			fmt.Print(">")
+			bar.Increment()
 		}
+		bar.Finish()
 	}
-
-	fmt.Print("\n")
 }
 
 func (sync *DataSyncImpl) needSyncBlocks() (uint32, uint32, bool) {
 
-	chainHeight, err := rpc.GetBlockCount()
+	chainHeight, err := rpc.GetChainHeight()
 	if err != nil {
 		return 0, 0, false
 	}
 
 	currentHeight := sync.CurrentHeight(QueryHeightCode)
 
-	if currentHeight-1 >= chainHeight {
+	if currentHeight >= chainHeight+1 {
 		return chainHeight, currentHeight, false
 	}
 

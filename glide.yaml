@@ -8,5 +8,6 @@ import:
 - package: github.com/itchyny/base58-go
 - package: github.com/mattn/go-sqlite3
 - package: github.com/urfave/cli
+- package: github.com/cheggaaa/pb
 ignore:
   - golang.org/x/sys/unix

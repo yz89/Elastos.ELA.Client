@@ -1,1 +1,5 @@
-{"LogToFile":false,"IpAddress":"localhost","HttpJsonPort":40100}
+{
+  "LogToFile": false,
+  "IpAddress": "localhost",
+  "HttpJsonPort": 20336
+}
