@@ -2,7 +2,6 @@ package wallet
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/elastos/Elastos.ELA.Client/log"
@@ -10,6 +9,7 @@ import (
 
 	. "github.com/elastos/Elastos.ELA/core"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/cheggaaa/pb"
 )
 
 type DataSync interface {
@@ -40,7 +40,7 @@ func (sync *DataSyncImpl) SyncChainData() {
 		if !needSync {
 			break
 		}
-
+		bar := pb.StartNew(int(chainHeight - currentHeight + 1))
 		for currentHeight <= chainHeight {
 			hash, err := GetBlockHash(currentHeight)
 			if err != nil {
@@ -56,12 +56,10 @@ func (sync *DataSyncImpl) SyncChainData() {
 
 			// Update wallet height
 			currentHeight = sync.CurrentHeight(block.Height + 1)
-
-			fmt.Print(">")
+			bar.Increment()
 		}
+		bar.Finish()
 	}
-
-	fmt.Print("\n")
 }
 
 func (sync *DataSyncImpl) needSyncBlocks() (uint32, uint32, bool) {

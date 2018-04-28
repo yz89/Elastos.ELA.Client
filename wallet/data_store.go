@@ -130,12 +130,8 @@ func (store *DataStoreImpl) catchSystemSignals() {
 
 func (store *DataStoreImpl) ResetDataStore() error {
 
-	_, err := store.Exec("DROP TABLE Info IF EXISTS")
-	if err != nil {
-		return err
-	}
-
-	_, err = store.Exec("DROP TABLE UTXOs IF EXISTS")
+	_, err := store.Exec(`DROP TABLE IF EXISTS Info;
+								DROP TABLE IF EXISTS UTXOs;`)
 	if err != nil {
 		return err
 	}
