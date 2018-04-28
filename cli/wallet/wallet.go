@@ -8,7 +8,6 @@ import (
 	"github.com/elastos/Elastos.ELA.Client/wallet"
 	"github.com/elastos/Elastos.ELA.Client/log"
 
-	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/urfave/cli"
 )
 
@@ -16,60 +15,45 @@ const (
 	MinMultiSignKeys = 3
 )
 
-func printLine() {
-	for i := 0; i < 80; i++ {
-		fmt.Print("-")
-	}
-	fmt.Println()
-}
-
 func createWallet(name string, password []byte) error {
-	password = getPassword(password, true)
-
-	_, err := wallet.Create(name, password)
+	var err error
+	password, err = GetPassword(password, true)
 	if err != nil {
 		return err
 	}
-	return showAccountInfo(name, password)
+
+	_, err = wallet.Create(name, password)
+	if err != nil {
+		return err
+	}
+
+	return ShowAccountInfo(name, password)
 }
 
 func changePassword(name string, password []byte, wallet wallet.Wallet) error {
 	// Verify old password
-	oldPassword := getPassword(password, false)
-	err := wallet.OpenKeystore(name, oldPassword)
+	oldPassword, err := GetPassword(password, false)
+	if err != nil {
+		return err
+	}
+
+	err = wallet.OpenKeystore(name, oldPassword)
 	if err != nil {
 		return err
 	}
 
 	// Input new password
-	fmt.Println("# input new password #")
-	newPassword := getPassword(nil, true)
+	fmt.Println("# INPUT NEW PASSWORD #")
+	newPassword, err := GetPassword(nil, true)
+	if err != nil {
+		return err
+	}
+
 	if err := wallet.ChangePassword(oldPassword, newPassword); err != nil {
 		return errors.New("failed to change password")
 	}
 
 	fmt.Println("password changed successful")
-
-	return nil
-}
-
-func showAccountInfo(name string, password []byte) error {
-	password = getPassword(password, false)
-
-	keyStore, err := wallet.OpenKeystore(name, password)
-	if err != nil {
-		return err
-	}
-	programHash := keyStore.GetProgramHash()
-	address, _ := programHash.ToAddress()
-	publicKey := keyStore.GetPublicKey()
-	publicKeyBytes, _ := publicKey.EncodePoint(true)
-
-	printLine()
-	fmt.Println("Address:     ", address)
-	fmt.Println("Public Key:  ", BytesToHexString(publicKeyBytes))
-	fmt.Println("ProgramHash: ", BytesToHexString(BytesReverse(programHash.Bytes())))
-	printLine()
 
 	return nil
 }
@@ -81,43 +65,8 @@ func listBalanceInfo(wallet wallet.Wallet) error {
 		log.Error("Get addresses error:", err)
 		return errors.New("get wallet addresses failed")
 	}
-	printLine()
-	for _, address := range addresses {
-		balance := Fixed64(0)
-		programHash := address.ProgramHash
-		UTXOs, err := wallet.GetAddressUTXOs(programHash)
-		if err != nil {
-			return errors.New("get " + address.Address + " UTXOs failed")
-		}
-		for _, utxo := range UTXOs {
-			balance += *utxo.Amount
-		}
-		fmt.Println("Address:     ", address.Address)
-		fmt.Println("ProgramHash: ", BytesToHexString(BytesReverse(address.ProgramHash.Bytes())))
-		fmt.Println("Balance:     ", balance.String())
 
-		printLine()
-	}
-	return nil
-}
-
-func getPassword(passwd []byte, confirmed bool) []byte {
-	var tmp []byte
-	var err error
-	if len(passwd) > 0 {
-		tmp = []byte(passwd)
-	} else {
-		if confirmed {
-			tmp, err = GetConfirmedPassword()
-		} else {
-			tmp, err = GetPassword()
-		}
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	}
-	return tmp
+	return ShowAccounts(addresses, nil, wallet)
 }
 
 func walletAction(context *cli.Context) {
@@ -145,7 +94,7 @@ func walletAction(context *cli.Context) {
 
 	// show account info
 	if context.Bool("account") {
-		if err := showAccountInfo(name, []byte(pass)); err != nil {
+		if err := ShowAccountInfo(name, []byte(pass)); err != nil {
 			fmt.Println("error: show account info failed, ", err)
 			cli.ShowCommandHelpAndExit(context, "account", 3)
 		}

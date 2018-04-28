@@ -27,12 +27,12 @@ func addAccount(wallet Wallet, content string) error {
 	// When add a new address, reset stored height to trigger synchronize blocks.
 	wallet.CurrentHeight(ResetHeightCode)
 
-	address, err := programHash.ToAddress()
-	if err != nil {
-		return err
+	addrs, err := wallet.GetAddresses()
+	if err != nil || len(addrs) == 0 {
+		return errors.New("fail to load wallet addresses")
 	}
-	fmt.Println(address)
-	return nil
+
+	return ShowAccounts(addrs, programHash, wallet)
 }
 
 func addMultiSignAccount(context *cli.Context, wallet Wallet, content string) error {
@@ -63,12 +63,12 @@ func addMultiSignAccount(context *cli.Context, wallet Wallet, content string) er
 	// When add a new address, reset stored height to trigger synchronize blocks.
 	wallet.CurrentHeight(ResetHeightCode)
 
-	address, err := programHash.ToAddress()
-	if err != nil {
-		return err
+	addrs, err := wallet.GetAddresses()
+	if err != nil || len(addrs) == 0 {
+		return errors.New("fail to load wallet addresses")
 	}
-	fmt.Println(address)
-	return nil
+
+	return ShowAccounts(addrs, programHash, wallet)
 }
 
 func getPublicKey(content string) (*crypto.PublicKey, error) {

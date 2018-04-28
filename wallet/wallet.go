@@ -61,7 +61,7 @@ func Create(name string, password []byte) (Wallet, error) {
 		return nil, err
 	}
 
-	dataStore.AddAddress(keyStore.GetProgramHash(), keyStore.GetRedeemScript())
+	dataStore.AddAddress(keyStore.GetProgramHash(), keyStore.GetRedeemScript(), TypeMaster)
 
 	wallet = &WalletImpl{
 		DataStore: dataStore,
@@ -104,7 +104,7 @@ func (wallet *WalletImpl) AddStandardAccount(publicKey *crypto.PublicKey) (*Uint
 		return nil, errors.New("[Wallet], CreateStandardAddress failed")
 	}
 
-	err = wallet.AddAddress(programHash, redeemScript)
+	err = wallet.AddAddress(programHash, redeemScript, TypeStand)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (wallet *WalletImpl) AddMultiSignAccount(M uint, publicKeys ...*crypto.Publ
 		return nil, errors.New("[Wallet], CreateMultiSignAddress failed")
 	}
 
-	err = wallet.AddAddress(programHash, redeemScript)
+	err = wallet.AddAddress(programHash, redeemScript, TypeMulti)
 	if err != nil {
 		return nil, err
 	}
@@ -228,14 +228,13 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 }
 
 func (wallet *WalletImpl) Sign(name string, password []byte, txn *Transaction) (*Transaction, error) {
-	code := txn.Programs[0].Code
 	// Verify password
 	err := wallet.OpenKeystore(name, password)
 	if err != nil {
 		return nil, err
 	}
 	// Get sign type
-	signType, err := crypto.GetScriptType(code)
+	signType, err := crypto.GetScriptType(txn.Programs[0].Code)
 	if err != nil {
 		return nil, err
 	}
@@ -278,8 +277,7 @@ func (wallet *WalletImpl) signStandardTransaction(password []byte, txn *Transact
 	buf.WriteByte(byte(len(signedTx)))
 	buf.Write(signedTx)
 	// Add signature
-	var program = &Program{code, buf.Bytes()}
-	txn.Programs = []*Program{program}
+	txn.Programs[0].Parameter = buf.Bytes()
 
 	return txn, nil
 }
@@ -344,8 +342,8 @@ func getSystemAssetId() Uint256 {
 	return systemToken.Hash()
 }
 
-func (wallet *WalletImpl) removeLockedUTXOs(utxos []*AddressUTXO) []*AddressUTXO {
-	var availableUTXOs []*AddressUTXO
+func (wallet *WalletImpl) removeLockedUTXOs(utxos []*UTXO) []*UTXO {
+	var availableUTXOs []*UTXO
 	var currentHeight = wallet.CurrentHeight(QueryHeightCode)
 	for _, utxo := range utxos {
 		if utxo.LockTime > 0 {

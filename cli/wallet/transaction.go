@@ -34,7 +34,7 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 
 	from := c.String("from")
 	if from == "" {
-		from, err = selectAddress(wallet)
+		from, err = SelectAccount(wallet)
 		if err != nil {
 			return err
 		}
@@ -150,20 +150,24 @@ func signTransaction(name string, password []byte, context *cli.Context, wallet 
 		return errors.New("deserialize transaction failed")
 	}
 
-	code := txn.Programs[0].Code
-	param := txn.Programs[0].Parameter
+	program := txn.Programs[0]
 
-	haveSign, needSign, err := crypto.GetSignStatus(code, param)
+	haveSign, needSign, err := crypto.GetSignStatus(program.Code, program.Parameter)
 	if haveSign == needSign {
 		return errors.New("transaction was fully signed, no need more sign")
 	}
 
-	_, err = wallet.Sign(name, getPassword(password, false), &txn)
+	password, err = GetPassword(password, false)
 	if err != nil {
 		return err
 	}
 
-	haveSign, needSign, _ = crypto.GetSignStatus(code, param)
+	_, err = wallet.Sign(name, password, &txn)
+	if err != nil {
+		return err
+	}
+
+	haveSign, needSign, _ = crypto.GetSignStatus(program.Code, program.Parameter)
 	fmt.Println("[", haveSign, "/", needSign, "] Transaction successfully signed")
 
 	output(haveSign, needSign, &txn)

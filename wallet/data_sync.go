@@ -113,7 +113,7 @@ func (sync *DataSyncImpl) processBlock(block *BlockInfo) {
 				}
 				amount, _ := StringToFixed64(output.Value)
 				// Save UTXO input to data store
-				addressUTXO := &AddressUTXO{
+				addressUTXO := &UTXO{
 					Op:       NewOutPoint(*referTxHash, uint16(index)),
 					Amount:   amount,
 					LockTime: lockTime,
