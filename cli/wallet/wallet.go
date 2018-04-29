@@ -80,7 +80,7 @@ func walletAction(context *cli.Context) {
 	// create wallet
 	if context.Bool("create") {
 		if err := createWallet(name, []byte(pass)); err != nil {
-			fmt.Println("error: create wallet failed, ", err)
+			fmt.Println("error: create wallet failed,", err)
 			cli.ShowCommandHelpAndExit(context, "create", 1)
 		}
 		return
@@ -95,7 +95,7 @@ func walletAction(context *cli.Context) {
 	// show account info
 	if context.Bool("account") {
 		if err := ShowAccountInfo(name, []byte(pass)); err != nil {
-			fmt.Println("error: show account info failed, ", err)
+			fmt.Println("error: show account info failed,", err)
 			cli.ShowCommandHelpAndExit(context, "account", 3)
 		}
 		return
@@ -104,44 +104,35 @@ func walletAction(context *cli.Context) {
 	// change password
 	if context.Bool("changepassword") {
 		if err := changePassword(name, []byte(pass), wallet); err != nil {
-			fmt.Println("error: change password failed, ", err)
+			fmt.Println("error: change password failed,", err)
 			cli.ShowCommandHelpAndExit(context, "changepassword", 4)
 		}
 		return
 	}
 
-	// add account
-	if pubKeyStr := context.String("addaccount"); pubKeyStr != "" {
-		if err := addAccount(wallet, pubKeyStr); err != nil {
-			fmt.Println("error: add standard account failed, ", err)
+	// add an account
+	if input := context.String("addaccount"); input != "" {
+		if err := addAccount(context, wallet, input); err != nil {
+			fmt.Println("error: add standard account failed,", err)
 			cli.ShowCommandHelpAndExit(context, "addaccount", 5)
 		}
 		return
 	}
 
-	// add multi sign account
-	if pubKeysStr := context.String("addmultisignaccount"); pubKeysStr != "" {
-		if err := addMultiSignAccount(context, wallet, pubKeysStr); err != nil {
-			fmt.Println("error: add multi sign account failed, ", err)
-			cli.ShowCommandHelpAndExit(context, "addmultisignaccount", 5)
-		}
-		return
-	}
-
 	// delete account
-	if address := context.String("deleteaccount"); address != "" {
+	if address := context.String("delaccount"); address != "" {
 		if err := deleteAccount(wallet, address); err != nil {
-			fmt.Println("error: delete account failed, ", err)
-			cli.ShowCommandHelpAndExit(context, "deleteaccount", 5)
+			fmt.Println("error: delete account failed,", err)
+			cli.ShowCommandHelpAndExit(context, "delaccount", 5)
 		}
 		return
 	}
 
-	// show addresses balance in this wallet
-	if context.Bool("balance") {
+	// list accounts information
+	if context.Bool("list") {
 		if err := listBalanceInfo(wallet); err != nil {
-			fmt.Println("error: list balance info failed, ", err)
-			cli.ShowCommandHelpAndExit(context, "balance", 6)
+			fmt.Println("error: list accounts information failed,", err)
+			cli.ShowCommandHelpAndExit(context, "list", 6)
 		}
 		return
 	}
@@ -173,7 +164,7 @@ func walletAction(context *cli.Context) {
 	// reset wallet
 	if context.Bool("reset") {
 		if err := wallet.Reset(); err != nil {
-			fmt.Println("error: reset wallet data store failed, ", err)
+			fmt.Println("error: reset wallet data store failed,", err)
 			cli.ShowCommandHelpAndExit(context, "reset", 8)
 		}
 		fmt.Println("wallet data store was reset successfully")
@@ -214,12 +205,8 @@ func NewCommand() *cli.Command {
 				Usage: "clear the UTXOs stored in the local database",
 			},
 			cli.StringFlag{
-				Name:  "addaccount",
-				Usage: "add a standard account with a public key",
-			},
-			cli.StringFlag{
-				Name: "addmultisignaccount",
-				Usage: "add a multi-sign account with multiple public keys\n" +
+				Name: "addaccount",
+				Usage: "add a standard account with a public key, or add a multi-sign account with multiple public keys\n" +
 					"\tuse -m to specify how many signatures are needed to create a valid transaction\n" +
 					"\tby default M is public keys / 2 + 1, witch means greater than half",
 			},
@@ -229,12 +216,12 @@ func NewCommand() *cli.Command {
 				Value: 0,
 			},
 			cli.StringFlag{
-				Name:  "deleteaccount",
+				Name:  "delaccount",
 				Usage: "delete an account from database using it's address",
 			},
 			cli.BoolFlag{
-				Name:  "balance, b",
-				Usage: "list account balances stored in this wallet",
+				Name:  "list, l",
+				Usage: "list accounts information, including address, public key, balance and account type.",
 			},
 			cli.StringFlag{
 				Name: "transaction, t",

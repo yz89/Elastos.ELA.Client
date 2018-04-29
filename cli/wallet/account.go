@@ -14,50 +14,56 @@ import (
 	"github.com/urfave/cli"
 )
 
-func addAccount(wallet Wallet, content string) error {
-	publicKey, err := getPublicKey(content)
-	if err != nil {
-		return err
+func addAccount(context *cli.Context, wallet Wallet, content string) error {
+	// Get public key string
+	if _, err := os.Stat(content); err == nil { // if content is a file
+
+		file, err := os.OpenFile(content, os.O_RDONLY, 0666)
+		if err != nil {
+			return errors.New("open public key(s) file failed")
+		}
+		rawData, err := ioutil.ReadAll(file)
+		if err != nil {
+			return errors.New("read public key(s) file failed")
+		}
+		content = string(rawData)
 	}
 
-	programHash, err := wallet.AddStandardAccount(publicKey)
-	if err != nil {
-		return err
-	}
-	// When add a new address, reset stored height to trigger synchronize blocks.
-	wallet.CurrentHeight(ResetHeightCode)
+	var err error
+	var programHash *Uint168
+	if !strings.Contains(content, ",") { // single public key
+		publicKey, err := getPublicKey(content)
+		if err != nil {
+			return err
+		}
 
-	addrs, err := wallet.GetAddresses()
-	if err != nil || len(addrs) == 0 {
-		return errors.New("fail to load wallet addresses")
-	}
+		programHash, err = wallet.AddStandardAccount(publicKey)
+		if err != nil {
+			return err
+		}
+	} else { // multi public keys
+		publicKeys, err := getPublicKeys(content)
+		if err != nil {
+			return err
+		}
 
-	return ShowAccounts(addrs, programHash, wallet)
-}
+		if len(publicKeys) < MinMultiSignKeys {
+			return errors.New(fmt.Sprint("multi sign account require at lest ", MinMultiSignKeys, " public keys"))
+		}
 
-func addMultiSignAccount(context *cli.Context, wallet Wallet, content string) error {
-	// Get address content from file or cli input
-	publicKeys, err := getPublicKeys(content)
-	if err != nil {
-		return err
-	}
+		// Get M value
+		M := context.Int("m")
+		if M == 0 { // Use default M greater than half
+			M = len(publicKeys)/2 + 1
+		}
+		if M < len(publicKeys)/2+1 || M > len(publicKeys) {
+			return errors.New("M must be greater than half number of public keys, less than number of public keys")
+		}
 
-	if len(publicKeys) < MinMultiSignKeys {
-		return errors.New(fmt.Sprint("multi sign account require at lest ", MinMultiSignKeys, " public keys"))
-	}
-
-	// Get M value
-	M := context.Int("m")
-	if M == 0 { // Use default M greater than half
-		M = len(publicKeys)/2 + 1
-	}
-	if M < len(publicKeys)/2+1 || M > len(publicKeys) {
-		return errors.New("M must be greater than half number of public keys, less than number of public keys")
-	}
-
-	programHash, err := wallet.AddMultiSignAccount(uint(M), publicKeys...)
-	if err != nil {
-		return err
+		programHash, err = wallet.AddMultiSignAccount(uint(M), publicKeys...)
+		if err != nil {
+			return err
+		}
 	}
 
 	// When add a new address, reset stored height to trigger synchronize blocks.
@@ -127,7 +133,7 @@ func getPublicKeys(content string) ([]*crypto.PublicKey, error) {
 		publicKeyStrings = strings.Split(strings.TrimSpace(content), ",")
 	}
 
-	// Check if have duplicate public key
+	// Check if have duplicate public keys
 	keyMap := map[string]string{}
 	for _, publicKeyString := range publicKeyStrings {
 		if keyMap[publicKeyString] == "" {
