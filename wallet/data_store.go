@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"os"
 	"math"
 	"sync"
 	"bytes"
@@ -120,6 +121,7 @@ func (store *DataStoreImpl) catchSystemSignals() {
 	HandleSignal(func() {
 		store.Lock()
 		store.Close()
+		os.Exit(-1)
 	})
 }
 
