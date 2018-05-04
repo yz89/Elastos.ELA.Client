@@ -120,6 +120,7 @@ func (store *DataStoreImpl) catchSystemSignals() {
 	HandleSignal(func() {
 		store.Lock()
 		store.Close()
+		os.Exit(-1)
 	})
 }
 
