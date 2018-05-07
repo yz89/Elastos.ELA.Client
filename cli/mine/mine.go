@@ -48,7 +48,7 @@ func miningAction(c *cli.Context) error {
 		if err != nil || number < 1 {
 			return errors.New("[number] must be a positive integer")
 		}
-		result, err := rpc.CallAndUnmarshal("manualmining", rpc.Param("count", number))
+		result, err := rpc.CallAndUnmarshal("discretemining", rpc.Param("count", number))
 		if err != nil {
 			return err
 		}

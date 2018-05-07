@@ -37,7 +37,7 @@ func GetChainHeight() (uint32, error) {
 }
 
 func GetBlockHash(height uint32) (*common.Uint256, error) {
-	result, err := CallAndUnmarshal("getblockhash", Param("index", height))
+	result, err := CallAndUnmarshal("getblockhash", Param("height", height))
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func GetBlockHash(height uint32) (*common.Uint256, error) {
 
 func GetBlock(hash *common.Uint256) (*BlockInfo, error) {
 	resp, err := CallAndUnmarshal("getblock",
-		Param("hash", hash.String()).Add("format", 2))
+		Param("blockhash", hash.String()).Add("format", 2))
 	if err != nil {
 		return nil, err
 	}

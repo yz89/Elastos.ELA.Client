@@ -65,8 +65,8 @@ func infoAction(c *cli.Context) error {
 		return nil
 	}
 
-	if index := c.Int64("getblockhash"); index >= 0 {
-		result, err := rpc.CallAndUnmarshal("getblockhash", rpc.Param("index", index))
+	if height := c.Int64("getblockhash"); height >= 0 {
+		result, err := rpc.CallAndUnmarshal("getblockhash", rpc.Param("index", height))
 		if err != nil {
 			fmt.Println("error: get block hash failed,", err)
 			return err
@@ -86,7 +86,7 @@ func infoAction(c *cli.Context) error {
 			}
 			param = result.(string)
 		}
-		result, err = rpc.CallAndUnmarshal("getblock", rpc.Param("hash", param))
+		result, err = rpc.CallAndUnmarshal("getblock", rpc.Param("blockhash", param))
 		if err != nil {
 			fmt.Println("error: get block failed,", err)
 			return err
@@ -96,7 +96,7 @@ func infoAction(c *cli.Context) error {
 	}
 
 	if param := c.String("gettransaction"); param != "" {
-		result, err := rpc.CallAndUnmarshal("getrawtransaction", rpc.Param("hash", param))
+		result, err := rpc.CallAndUnmarshal("getrawtransaction", rpc.Param("txid", param))
 		if err != nil {
 			fmt.Println("error: get transaction failed,", err)
 			return err
