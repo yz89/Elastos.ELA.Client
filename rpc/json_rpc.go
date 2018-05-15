@@ -14,9 +14,9 @@ import (
 )
 
 type Response struct {
-	ID      int64       `json:"id"`
-	Version string      `json:"jsonrpc"`
-	*Error              `json:"error"`
+	ID      int64  `json:"id"`
+	Version string `json:"jsonrpc"`
+	*Error  `json:"error"`
 	Result  interface{} `json:"result"`
 }
 

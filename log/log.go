@@ -1,9 +1,9 @@
 package log
 
 import (
-	"os"
-	"log"
 	"fmt"
+	"log"
+	"os"
 )
 
 const (

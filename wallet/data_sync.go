@@ -7,9 +7,9 @@ import (
 	"github.com/elastos/Elastos.ELA.Client/log"
 	. "github.com/elastos/Elastos.ELA.Client/rpc"
 
-	. "github.com/elastos/Elastos.ELA/core"
-	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/cheggaaa/pb"
+	. "github.com/elastos/Elastos.ELA.Utility/common"
+	. "github.com/elastos/Elastos.ELA/core"
 )
 
 type DataSync interface {

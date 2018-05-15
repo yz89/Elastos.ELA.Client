@@ -1,18 +1,18 @@
 package wallet
 
 import (
-	"fmt"
-	"math"
 	"bytes"
 	"errors"
-	"strconv"
+	"fmt"
+	"math"
 	"math/rand"
+	"strconv"
 
 	"github.com/elastos/Elastos.ELA.Client/log"
 
-	. "github.com/elastos/Elastos.ELA/core"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
+	. "github.com/elastos/Elastos.ELA/core"
 )
 
 var SystemAssetId = getSystemAssetId()
@@ -239,7 +239,7 @@ func (wallet *WalletImpl) Sign(name string, password []byte, txn *Transaction) (
 		return nil, err
 	}
 	// Look up transaction type
-	if signType == crypto.STANDARD {
+	if signType == STANDARD {
 
 		// Sign single transaction
 		txn, err = wallet.signStandardTransaction(password, txn)
@@ -247,7 +247,7 @@ func (wallet *WalletImpl) Sign(name string, password []byte, txn *Transaction) (
 			return nil, err
 		}
 
-	} else if signType == crypto.MULTISIG {
+	} else if signType == MULTISIG {
 
 		// Sign multi sign transaction
 		txn, err = wallet.signMultiSignTransaction(password, txn)
