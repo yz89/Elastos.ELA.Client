@@ -154,7 +154,7 @@ func (wallet *WalletImpl) CreateCrossChainTransaction(fromAddress, toAddress, cr
 	return wallet.createCrossChainTransaction(fromAddress, fee, uint32(0), &CrossChainOutput{toAddress, amount, crossChainAddress})
 }
 
-	func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, outputs ...*Transfer) (*Transaction, error) {
+func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, outputs ...*Transfer) (*Transaction, error) {
 	// Check if output is valid
 	if outputs == nil || len(outputs) == 0 {
 		return nil, errors.New("[Wallet], Invalid transaction target")
@@ -251,9 +251,9 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 	var totalOutputAmount = Fixed64(0) // The total amount will be spend
 	var txOutputs []*Output       // The outputs in transaction
 	totalOutputAmount += *fee          // Add transaction fee
+	perAccountFee := *fee / Fixed64(len(outputs))
 
 	txPayload := &PayloadTransferCrossChainAsset{}
-	txPayload.AddressesMap = make(map[string]uint64)
 	for index, output := range outputs {
 		receiver, err := Uint168FromAddress(output.Address)
 		if err != nil {
@@ -268,7 +268,10 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 		totalOutputAmount += *output.Amount
 		txOutputs = append(txOutputs, txOutput)
 
-		txPayload.AddressesMap[output.CrossChainAddress] = uint64(index)
+		txPayload.CrossChainAddress = append(txPayload.CrossChainAddress, output.CrossChainAddress)
+		txPayload.OutputIndex = append(txPayload.OutputIndex, uint64(index))
+		txPayload.CrossChainAmount = append(txPayload.CrossChainAmount, *output.Amount - perAccountFee)
+
 	}
 	// Get spender's UTXOs
 	UTXOs, err := wallet.GetAddressUTXOs(spender)
