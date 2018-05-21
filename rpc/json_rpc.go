@@ -29,15 +29,15 @@ type Error struct {
 var url string
 
 func GetChainHeight() (uint32, error) {
-	result, err := CallAndUnmarshal("getcurrentheight", nil)
+	result, err := CallAndUnmarshal("getblockcount", nil)
 	if err != nil {
 		return 0, err
 	}
-	return uint32(result.(float64)), nil
+	return uint32(result.(float64))-1, nil
 }
 
 func GetBlockHash(height uint32) (*common.Uint256, error) {
-	result, err := CallAndUnmarshal("getblockhash", Param("index", height))
+	result, err := CallAndUnmarshal("getblockhash", Param("height", height))
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func GetBlockHash(height uint32) (*common.Uint256, error) {
 
 func GetBlock(hash *common.Uint256) (*BlockInfo, error) {
 	resp, err := CallAndUnmarshal("getblock",
-		Param("hash", hash.String()).Add("format", 2))
+		Param("blockhash", hash.String()).Add("verbosity", 2))
 	if err != nil {
 		return nil, err
 	}
