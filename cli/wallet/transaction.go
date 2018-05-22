@@ -10,14 +10,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/elastos/Elastos.ELA.Client/rpc"
+	"github.com/elastos/Elastos.ELA.Client/config"
 	"github.com/elastos/Elastos.ELA.Client/log"
+	"github.com/elastos/Elastos.ELA.Client/rpc"
 	walt "github.com/elastos/Elastos.ELA.Client/wallet"
-	. "github.com/elastos/Elastos.ELA/core"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
+	. "github.com/elastos/Elastos.ELA/core"
 	"github.com/urfave/cli"
-	"github.com/elastos/Elastos.ELA.Client/config"
 )
 
 func createTransaction(c *cli.Context, wallet walt.Wallet) error {
@@ -67,7 +67,7 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 			return errors.New("create transaction failed: " + err.Error())
 		}
 	} else if withdraw != "" {
-		to = config.Params().DestroyAddress
+		to = walt.DESTROY_ADDRESS
 		txn, err = wallet.CreateCrossChainTransaction(from, to, withdraw, amount, fee)
 		if err != nil {
 			return errors.New("create transaction failed: " + err.Error())

@@ -15,6 +15,10 @@ import (
 	. "github.com/elastos/Elastos.ELA/core"
 )
 
+const (
+	DESTROY_ADDRESS = "0000000000000000000000000000000000"
+)
+
 var SystemAssetId = getSystemAssetId()
 
 type Transfer struct {
@@ -156,7 +160,7 @@ func (wallet *WalletImpl) CreateCrossChainTransaction(fromAddress, toAddress, cr
 
 func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, outputs ...*Transfer) (*Transaction, error) {
 	// Check if output is valid
-	if outputs == nil || len(outputs) == 0 {
+	if len(outputs) == 0 {
 		return nil, errors.New("[Wallet], Invalid transaction target")
 	}
 	// Sync chain block data before create transaction
@@ -236,7 +240,7 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 
 func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, outputs ...*CrossChainOutput) (*Transaction, error) {
 	// Check if output is valid
-	if outputs == nil || len(outputs) == 0 {
+	if len(outputs) == 0 {
 		return nil, errors.New("[Wallet], Invalid transaction target")
 	}
 	// Sync chain block data before create transaction
@@ -249,15 +253,20 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 	}
 	// Create transaction outputs
 	var totalOutputAmount = Fixed64(0) // The total amount will be spend
-	var txOutputs []*Output       // The outputs in transaction
+	var txOutputs []*Output            // The outputs in transaction
 	totalOutputAmount += *fee          // Add transaction fee
 	perAccountFee := *fee / Fixed64(len(outputs))
 
 	txPayload := &PayloadTransferCrossChainAsset{}
 	for index, output := range outputs {
-		receiver, err := Uint168FromAddress(output.Address)
-		if err != nil {
-			return nil, errors.New(fmt.Sprint("[Wallet], Invalid receiver address: ", output.Address, ", error: ", err))
+		var receiver *Uint168
+		if output.Address == DESTROY_ADDRESS {
+			receiver = &Uint168{}
+		} else {
+			receiver, err = Uint168FromAddress(output.Address)
+			if err != nil {
+				return nil, errors.New(fmt.Sprint("[Wallet], Invalid receiver address: ", output.Address, ", error: ", err))
+			}
 		}
 		txOutput := &Output{
 			AssetID:     SystemAssetId,
@@ -270,7 +279,7 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 
 		txPayload.CrossChainAddress = append(txPayload.CrossChainAddress, output.CrossChainAddress)
 		txPayload.OutputIndex = append(txPayload.OutputIndex, uint64(index))
-		txPayload.CrossChainAmount = append(txPayload.CrossChainAmount, *output.Amount - perAccountFee)
+		txPayload.CrossChainAmount = append(txPayload.CrossChainAmount, *output.Amount-perAccountFee)
 
 	}
 	// Get spender's UTXOs
@@ -324,8 +333,7 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 	return txn, nil
 }
 
-	func (wallet *WalletImpl) Sign(name string, password []byte, txn *Transaction) (*Transaction, error) {
-	code := txn.Programs[0].Code
+func (wallet *WalletImpl) Sign(name string, password []byte, txn *Transaction) (*Transaction, error) {
 	// Verify password
 	err := wallet.Open(name, password)
 	if err != nil {
@@ -472,6 +480,6 @@ func (wallet *WalletImpl) newTransaction(redeemScript []byte, inputs []*Input, o
 		Inputs:     inputs,
 		Outputs:    outputs,
 		Programs:   []*Program{program},
-		LockTime:   0/*wallet.CurrentHeight(QueryHeightCode) - 1*/,
+		LockTime:   0,
 	}
 }
