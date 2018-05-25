@@ -22,12 +22,10 @@ type Transfer struct {
 	Amount  *Fixed64
 }
 
-var wallet Wallet // Single instance of wallet
-
 type Wallet interface {
 	DataStore
 
-	OpenKeystore(name string, password []byte) error
+	Open(name string, password []byte) error
 	ChangePassword(oldPassword, newPassword []byte) error
 
 	AddStandardAccount(publicKey *crypto.PublicKey) (*Uint168, error)
@@ -48,7 +46,7 @@ type WalletImpl struct {
 	Keystore
 }
 
-func Create(name string, password []byte) (Wallet, error) {
+func Create(name string, password []byte) (*WalletImpl, error) {
 	keyStore, err := CreateKeystore(name, password)
 	if err != nil {
 		log.Error("Wallet create key store failed:", err)
@@ -63,28 +61,24 @@ func Create(name string, password []byte) (Wallet, error) {
 
 	dataStore.AddAddress(keyStore.GetProgramHash(), keyStore.GetRedeemScript(), TypeMaster)
 
-	wallet = &WalletImpl{
+	return &WalletImpl{
 		DataStore: dataStore,
 		Keystore:  keyStore,
-	}
-	return wallet, nil
+	}, nil
 }
 
-func Open() (Wallet, error) {
-	if wallet == nil {
-		dataStore, err := OpenDataStore()
-		if err != nil {
-			return nil, err
-		}
-
-		wallet = &WalletImpl{
-			DataStore: dataStore,
-		}
+func GetWallet() (*WalletImpl, error) {
+	dataStore, err := OpenDataStore()
+	if err != nil {
+		return nil, err
 	}
-	return wallet, nil
+
+	return &WalletImpl{
+		DataStore: dataStore,
+	}, nil
 }
 
-func (wallet *WalletImpl) OpenKeystore(name string, password []byte) error {
+func (wallet *WalletImpl) Open(name string, password []byte) error {
 	keyStore, err := OpenKeystore(name, password)
 	if err != nil {
 		return err
@@ -229,7 +223,7 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 
 func (wallet *WalletImpl) Sign(name string, password []byte, txn *Transaction) (*Transaction, error) {
 	// Verify password
-	err := wallet.OpenKeystore(name, password)
+	err := wallet.Open(name, password)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +236,7 @@ func (wallet *WalletImpl) Sign(name string, password []byte, txn *Transaction) (
 	if signType == STANDARD {
 
 		// Sign single transaction
-		txn, err = wallet.signStandardTransaction(password, txn)
+		txn, err = wallet.signStandardTransaction(txn)
 		if err != nil {
 			return nil, err
 		}
@@ -250,7 +244,7 @@ func (wallet *WalletImpl) Sign(name string, password []byte, txn *Transaction) (
 	} else if signType == MULTISIG {
 
 		// Sign multi sign transaction
-		txn, err = wallet.signMultiSignTransaction(password, txn)
+		txn, err = wallet.signMultiSignTransaction(txn)
 		if err != nil {
 			return nil, err
 		}
@@ -259,7 +253,7 @@ func (wallet *WalletImpl) Sign(name string, password []byte, txn *Transaction) (
 	return txn, nil
 }
 
-func (wallet *WalletImpl) signStandardTransaction(password []byte, txn *Transaction) (*Transaction, error) {
+func (wallet *WalletImpl) signStandardTransaction(txn *Transaction) (*Transaction, error) {
 	code := txn.Programs[0].Code
 	// Get signer
 	programHash, err := crypto.GetSigner(code)
@@ -268,7 +262,7 @@ func (wallet *WalletImpl) signStandardTransaction(password []byte, txn *Transact
 		return nil, errors.New("[Wallet], Invalid signer")
 	}
 	// Sign transaction
-	signedTx, err := wallet.Keystore.Sign(password, txn)
+	signedTx, err := wallet.Keystore.Sign(txn)
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +276,7 @@ func (wallet *WalletImpl) signStandardTransaction(password []byte, txn *Transact
 	return txn, nil
 }
 
-func (wallet *WalletImpl) signMultiSignTransaction(password []byte, txn *Transaction) (*Transaction, error) {
+func (wallet *WalletImpl) signMultiSignTransaction(txn *Transaction) (*Transaction, error) {
 	code := txn.Programs[0].Code
 	param := txn.Programs[0].Parameter
 	// Check if current user is a valid signer
@@ -302,7 +296,7 @@ func (wallet *WalletImpl) signMultiSignTransaction(password []byte, txn *Transac
 		return nil, errors.New("[Wallet], Invalid multi sign signer")
 	}
 	// Sign transaction
-	signature, err := wallet.Keystore.Sign(password, txn)
+	signature, err := wallet.Keystore.Sign(txn)
 	if err != nil {
 		return nil, err
 	}

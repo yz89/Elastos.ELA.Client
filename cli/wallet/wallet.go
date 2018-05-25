@@ -9,11 +9,49 @@ import (
 	"github.com/elastos/Elastos.ELA.Client/log"
 
 	"github.com/urfave/cli"
+	"github.com/elastos/Elastos.ELA.Utility/common"
 )
 
 const (
 	MinMultiSignKeys = 3
 )
+
+func importKeystore(name string, password []byte, privateKey string) error {
+	var err error
+	password, err = GetPassword(password, true)
+	if err != nil {
+		return err
+	}
+
+	key, err := common.HexStringToBytes(privateKey)
+	if err != nil {
+		return err
+	}
+
+	err = wallet.ImportKeystore(name, password, key)
+	if err != nil {
+		return err
+	}
+
+	return ShowAccountInfo(name, password)
+}
+
+func exportKeystore(name string, password []byte) error {
+	var err error
+	password, err = GetPassword(password, false)
+	if err != nil {
+		return err
+	}
+
+	privateKey, err := wallet.ExportKeystore(name, password)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(common.BytesToHexString(privateKey))
+
+	return nil
+}
 
 func createWallet(name string, password []byte) error {
 	var err error
@@ -37,7 +75,7 @@ func changePassword(name string, password []byte, wallet wallet.Wallet) error {
 		return err
 	}
 
-	err = wallet.OpenKeystore(name, oldPassword)
+	err = wallet.Open(name, oldPassword)
 	if err != nil {
 		return err
 	}
@@ -77,6 +115,24 @@ func walletAction(context *cli.Context) {
 	name := context.String("name")
 	pass := context.String("password")
 
+	// import wallet from an exited private key
+	if privateKey := context.String("import"); len(privateKey) > 0 {
+		if err := importKeystore(name, []byte(pass), privateKey); err != nil {
+			fmt.Println("error: import keystore failed,", err)
+			cli.ShowCommandHelpAndExit(context, "import", -1)
+		}
+		return
+	}
+
+	// export the private key from this wallet
+	if context.Bool("export") {
+		if err := exportKeystore(name, []byte(pass)); err != nil {
+			fmt.Println("error: export keystore failed,", err)
+			cli.ShowCommandHelpAndExit(context, "export", -1)
+		}
+		return
+	}
+
 	// create wallet
 	if context.Bool("create") {
 		if err := createWallet(name, []byte(pass)); err != nil {
@@ -86,7 +142,7 @@ func walletAction(context *cli.Context) {
 		return
 	}
 
-	wallet, err := wallet.Open()
+	wallet, err := wallet.GetWallet()
 	if err != nil {
 		fmt.Println("error: open wallet failed, ", err)
 		os.Exit(2)
@@ -187,6 +243,14 @@ func NewCommand() *cli.Command {
 				Name:  "name, n",
 				Usage: "to specify the created keystore file name or the keystore file path to open",
 				Value: wallet.DefaultKeystoreFile,
+			},
+			cli.StringFlag{
+				Name:  "import",
+				Usage: "create your wallet using an existed private key",
+			},
+			cli.BoolFlag{
+				Name:  "export",
+				Usage: "export your private key from this wallet",
 			},
 			cli.BoolFlag{
 				Name:  "create, c",

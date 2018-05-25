@@ -10,6 +10,7 @@ import (
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
 	. "github.com/elastos/Elastos.ELA/core"
+	"crypto/elliptic"
 )
 
 const (
@@ -19,12 +20,13 @@ const (
 type Keystore interface {
 	ChangePassword(oldPassword, newPassword []byte) error
 
+	GetPrivateKey() []byte
 	GetPublicKey() *crypto.PublicKey
 	GetRedeemScript() []byte
 	GetProgramHash() *Uint168
 	Address() string
 
-	Sign(password []byte, txn *Transaction) ([]byte, error)
+	Sign(txn *Transaction) ([]byte, error)
 }
 
 type KeystoreImpl struct {
@@ -32,10 +34,63 @@ type KeystoreImpl struct {
 
 	*KeystoreFile
 
+	privateKey   []byte
 	publicKey    *crypto.PublicKey
 	redeemScript []byte
 	programHash  *Uint168
 	address      string
+}
+
+func ImportKeystore(name string, password []byte, privateKey []byte) error {
+	keystoreFile, err := CreateKeystoreFile(name)
+	if err != nil {
+		return err
+	}
+
+	keystore := &KeystoreImpl{
+		KeystoreFile: keystoreFile,
+	}
+
+	iv := GenerateKey(16)
+	// Set IV
+	keystoreFile.SetIV(iv)
+
+	masterKey := GenerateKey(32)
+
+	passwordKey := crypto.ToAesKey(password)
+	defer ClearBytes(passwordKey)
+	passwordHash := sha256.Sum256(passwordKey)
+	defer ClearBytes(passwordHash[:])
+	// Set password hash
+	keystoreFile.SetPasswordHash(passwordHash[:])
+
+	masterKeyEncrypted, err := keystore.encryptMasterKey(passwordKey, masterKey)
+	if err != nil {
+		return err
+	}
+	// Set master key encrypted
+	keystoreFile.SetMasterKeyEncrypted(masterKeyEncrypted)
+
+	// Get public key
+	publicKey := new(crypto.PublicKey)
+	publicKey.X, publicKey.Y = elliptic.P256().ScalarBaseMult(privateKey)
+
+	privateKeyEncrypted, err := keystore.encryptPrivateKey(masterKey, passwordKey, privateKey, publicKey)
+	defer ClearBytes(privateKeyEncrypted)
+	// Set private key encrypted
+	keystoreFile.SetPrivateKeyEncrypted(privateKeyEncrypted)
+
+	// Init keystore parameters
+	keystore.init(privateKey, publicKey)
+
+	err = keystoreFile.SaveToFile()
+	if err != nil {
+		return err
+	}
+	// Handle system interrupt signals
+	keystore.catchSystemSignals()
+
+	return nil
 }
 
 func CreateKeystore(name string, password []byte) (Keystore, error) {
@@ -49,19 +104,11 @@ func CreateKeystore(name string, password []byte) (Keystore, error) {
 		KeystoreFile: keystoreFile,
 	}
 
-	iv := make([]byte, 16)
-	_, err = rand.Read(iv)
-	if err != nil {
-		return nil, err
-	}
+	iv := GenerateKey(16)
 	// Set IV
 	keystoreFile.SetIV(iv)
 
-	masterKey := make([]byte, 32)
-	_, err = rand.Read(masterKey)
-	if err != nil {
-		return nil, err
-	}
+	masterKey := GenerateKey(32)
 
 	passwordKey := crypto.ToAesKey(password)
 	defer ClearBytes(passwordKey)
@@ -130,8 +177,24 @@ func OpenKeystore(name string, password []byte) (Keystore, error) {
 	return keystore, nil
 }
 
+func ExportKeystore(name string, password []byte) ([]byte, error) {
+	keystore, err := OpenKeystore(name, password)
+	if err != nil {
+		return nil, err
+	}
+
+	return keystore.GetPrivateKey(), nil
+}
+
+func GenerateKey(len uint16) []byte {
+	key := make([]byte, len)
+	rand.Read(key)
+	return key
+}
+
 func (store *KeystoreImpl) init(privateKey []byte, publicKey *crypto.PublicKey) error {
-	defer ClearBytes(privateKey)
+	// Set private key
+	store.privateKey = privateKey
 
 	// Set public key
 	store.publicKey = publicKey
@@ -233,6 +296,10 @@ func (store *KeystoreImpl) ChangePassword(oldPassword, newPassword []byte) error
 	return nil
 }
 
+func (store *KeystoreImpl) GetPrivateKey() []byte {
+	return store.privateKey
+}
+
 func (store *KeystoreImpl) GetPublicKey() *crypto.PublicKey {
 	return store.publicKey
 }
@@ -249,15 +316,10 @@ func (store *KeystoreImpl) Address() string {
 	return store.address
 }
 
-func (store *KeystoreImpl) Sign(password []byte, txn *Transaction) ([]byte, error) {
-	privateKey, _, err := store.decryptPrivateKey(crypto.ToAesKey(password))
-	if err != nil {
-		return nil, err
-	}
-
+func (store *KeystoreImpl) Sign(txn *Transaction) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	txn.SerializeUnsigned(buf)
-	signedData, err := crypto.Sign(privateKey, buf.Bytes())
+	signedData, err := crypto.Sign(store.privateKey, buf.Bytes())
 	if err != nil {
 		return nil, err
 	}
