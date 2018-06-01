@@ -1,9 +1,12 @@
 # Elastos.ELA.Client
 
 ## Summary
-##### This is the client program of the ELA node, which is a command line tool to control node and see node info etc.
-##### Also, this project including a light implementation of ELA wallet, which can create your ELA account, do receive, create, sign or send transactions.
-##### You can run a node locally and set the miner address to your wallet account, then run the node to get your own ELAs and do whatever you like.
+This is the client program of the ELA node, which is a command line tool to control node and see node info etc.
+Also, this project including a light implementation of ELA wallet, which can create your ELA account, do receive, create, sign or send transactions.
+You can run a node locally and set the miner address to your wallet account, then run the node to get your own ELAs and do whatever you like.
+
+## Wiki
+For more details, please check on this [Wiki](https://github.com/elastos/Elastos.ELA.Client/wiki) page.
 
 ## Build on Mac
 
@@ -260,17 +263,18 @@ DESCRIPTION:
 OPTIONS:
    --password value, -p value     arguments to pass the password value
    --name value, -n value         to specify the created keystore file name or the keystore file path to open (default: "keystore.dat")
+   --import value                 create your wallet using an existed private key
+   --export                       export your private key from this wallet
    --create, -c                   create wallet, this will generate a keystore file within you account information
    --account, -a                  show account address, public key and program hash
    --changepassword               change the password to access this wallet, must do not forget it
    --reset                        clear the UTXOs stored in the local database
-   --addaccount value             add a standard account with a public key
-   --addmultisignaccount value    add a multi-sign account with multiple public keys
+   --addaccount value             add a standard account with a public key, or add a multi-sign account with multiple public keys
                                   use -m to specify how many signatures are needed to create a valid transaction
                                   by default M is public keys / 2 + 1, witch means greater than half
    -m value                       the M value to specify how many signatures are needed to create a valid transaction (default: 0)
-   --deleteaccount value          delete an account from database using it's address
-   --balance, -b                  list account balances stored in this wallet
+   --delaccount value             delete an account from database using it's address
+   --list, -l                     list accounts information, including address, public key, balance and account type.
    --transaction value, -t value  use [create, sign, send], to create, sign or send a transaction
                                   create:
                                     use --to --amount --fee [--lock], or --file --fee [--lock]
@@ -310,9 +314,9 @@ ProgramHash:  7721066f3791c6df687300c9706236544baaad9f21
 
 Show account balance
 
-`$ ./ela-cli wallet --balance` or `$ ./ela-cli wallet -b`
+`$ ./ela-cli wallet --list` or `$ ./ela-cli wallet -l`
 ```shell
->>>>>>>>>
+201 / 201 [=========================================================] 100.00% 0s
 --------------------------------------------------------------------------------
 Address:      EXiCyZBdvguJU5upFGZwUQMJFB53TBb6km
 ProgramHash:  7721066f3791c6df687300c9706236544baaad9f21
@@ -323,7 +327,6 @@ ProgramHash:  433572eda403ac6372cc0004b2df2dc602a2890312
 Balance:      0
 --------------------------------------------------------------------------------
 ```
-The `>>>` mark means syncing blocks.
 
 Create a transaction
 
