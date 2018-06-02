@@ -1,15 +1,17 @@
 package wallet
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
 
-	"github.com/elastos/Elastos.ELA.Client/wallet"
 	"github.com/elastos/Elastos.ELA.Client/log"
+	"github.com/elastos/Elastos.ELA.Client/wallet"
 
-	"github.com/urfave/cli"
 	"github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/elastos/Elastos.ELA.Utility/crypto"
+	"github.com/urfave/cli"
 )
 
 const (
@@ -105,6 +107,31 @@ func listBalanceInfo(wallet wallet.Wallet) error {
 	}
 
 	return ShowAccounts(addresses, nil, wallet)
+}
+
+func calculateGenesisAddress(genesisBlockHash string) error {
+	genesisBlockBytes, err := common.HexStringToBytes(genesisBlockHash)
+	if err != nil {
+		return errors.New("genesis block hash to bytes failed")
+	}
+
+	buf := new(bytes.Buffer)
+	buf.WriteByte(byte(len(genesisBlockBytes)))
+	buf.Write(genesisBlockBytes)
+	buf.WriteByte(byte(common.CROSSCHAIN))
+
+	genesisProgramHash, err := crypto.ToProgramHash(buf.Bytes())
+	if err != nil {
+		return errors.New("genesis block bytes to program hash faild")
+	}
+
+	genesisAddress, err := genesisProgramHash.ToAddress()
+	if err != nil {
+		return errors.New("genesis block hash to genesis address failed")
+	}
+	fmt.Println("genesis address: ", genesisAddress)
+
+	return nil
 }
 
 func walletAction(context *cli.Context) {
@@ -226,6 +253,14 @@ func walletAction(context *cli.Context) {
 		fmt.Println("wallet data store was reset successfully")
 		return
 	}
+
+	//calculate genesis address
+	if genesisBlockHash := context.String("genesis"); genesisBlockHash != "" {
+		if err := calculateGenesisAddress(genesisBlockHash); err != nil {
+			fmt.Println("error:", err)
+			os.Exit(704)
+		}
+	}
 }
 
 func NewCommand() *cli.Command {
@@ -336,6 +371,10 @@ func NewCommand() *cli.Command {
 			cli.StringFlag{
 				Name:  "withdraw",
 				Usage: "create withdraw transaction",
+			},
+			cli.StringFlag{
+				Name:  "genesis, g",
+				Usage: "calculate genesis address from genesis block hash",
 			},
 		},
 		Action: walletAction,
