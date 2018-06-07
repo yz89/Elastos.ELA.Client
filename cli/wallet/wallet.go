@@ -2,10 +2,10 @@ package wallet
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"os"
-	"crypto/sha256"
 
 	"github.com/elastos/Elastos.ELA.Client/log"
 	"github.com/elastos/Elastos.ELA.Client/wallet"
@@ -115,10 +115,14 @@ func calculateGenesisAddress(genesisBlockHash string) error {
 	if err != nil {
 		return errors.New("genesis block hash to bytes failed")
 	}
+	reversedGenesisBlockBytes := common.BytesReverse(genesisBlockBytes)
+	reversedGenesisBlockStr := common.BytesToHexString(reversedGenesisBlockBytes)
+
+	fmt.Println("genesis program hash:", reversedGenesisBlockStr)
 
 	buf := new(bytes.Buffer)
-	buf.WriteByte(byte(len(genesisBlockBytes)))
-	buf.Write(genesisBlockBytes)
+	buf.WriteByte(byte(len(reversedGenesisBlockBytes)))
+	buf.Write(reversedGenesisBlockBytes)
 	buf.WriteByte(byte(common.CROSSCHAIN))
 
 	sum168 := func(prefix byte, code []byte) []byte {
@@ -130,7 +134,7 @@ func calculateGenesisAddress(genesisBlockHash string) error {
 
 	genesisProgramHash, err := common.Uint168FromBytes(sum168(common.PrefixCrossChain, buf.Bytes()))
 	if err != nil {
-		return errors.New("genesis block bytes to program hash faild")
+		return errors.New("genesis block bytes to program hash failed")
 	}
 
 	genesisAddress, err := genesisProgramHash.ToAddress()
