@@ -161,7 +161,7 @@ If clone works successfully, you should see folder structure like $GOPATH/src/gi
 Run `glide update && glide install` to install depandencies.
 
 ### Install sqlite database
-This will make the `make` progress far more fester.
+This will make the `make` progress far more faster.
 ```shell
 go install github.com/elastos/Elastos.ELA.Client/vendor/github.com/mattn/go-sqlite3
 ```
