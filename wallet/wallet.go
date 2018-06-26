@@ -277,10 +277,9 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 		totalOutputAmount += *output.Amount
 		txOutputs = append(txOutputs, txOutput)
 
-		txPayload.CrossChainAddress = append(txPayload.CrossChainAddress, output.CrossChainAddress)
-		txPayload.OutputIndex = append(txPayload.OutputIndex, uint64(index))
-		txPayload.CrossChainAmount = append(txPayload.CrossChainAmount, *output.Amount-perAccountFee)
-
+		txPayload.CrossChainAddresses = append(txPayload.CrossChainAddresses, output.CrossChainAddress)
+		txPayload.OutputIndexes = append(txPayload.OutputIndexes, uint64(index))
+		txPayload.CrossChainAmounts = append(txPayload.CrossChainAmounts, *output.Amount-perAccountFee)
 	}
 	// Get spender's UTXOs
 	UTXOs, err := wallet.GetAddressUTXOs(spender)
