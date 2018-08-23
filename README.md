@@ -67,7 +67,7 @@ If you cannot see the version number, there must be something wrong when install
 ### Clone source code to $GOPATH/src/github.com/elastos/ folder
 Make sure you are in the folder of `$GOPATH/src/github.com/elastos/`
 ```shell
-$ go clone https://github.com/elastos/Elastos.ELA.Client.git
+$ git clone https://github.com/elastos/Elastos.ELA.Client.git
 ```
 
 If clone works successfully, you should see folder structure like $GOPATH/src/github.com/elastos/Elastos.ELA.Client/Makefile
