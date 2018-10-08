@@ -48,6 +48,7 @@ type Wallet interface {
 	CreateMultiOutputTransaction(fromAddress string, fee *Fixed64, output ...*Transfer) (*Transaction, error)
 	CreateLockedMultiOutputTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, output ...*Transfer) (*Transaction, error)
 	CreateCrossChainTransaction(fromAddress, toAddress, crossChainAddress string, amount, fee *Fixed64) (*Transaction, error)
+	CreateRegSidechainTransaction(fromAddress, toAddress string, amount, fee *Fixed64, payload Payload) (*Transaction, error)
 
 	Sign(name string, password []byte, transaction *Transaction) (*Transaction, error)
 
@@ -156,6 +157,10 @@ func (wallet *WalletImpl) CreateLockedMultiOutputTransaction(fromAddress string,
 
 func (wallet *WalletImpl) CreateCrossChainTransaction(fromAddress, toAddress, crossChainAddress string, amount, fee *Fixed64) (*Transaction, error) {
 	return wallet.createCrossChainTransaction(fromAddress, fee, uint32(0), &CrossChainOutput{toAddress, amount, crossChainAddress})
+}
+
+func (wallet *WalletImpl) CreateRegSidechainTransaction(fromAddress, toAddress string, amount, fee *Fixed64, payload Payload) (*Transaction, error) {
+	return wallet.createRegSidechianTransaction(fromAddress, fee, uint32(0), payload, &Transfer{toAddress, amount})
 }
 
 func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, outputs ...*Transfer) (*Transaction, error) {
@@ -329,6 +334,88 @@ func (wallet *WalletImpl) createCrossChainTransaction(fromAddress string, fee *F
 	txn := wallet.newTransaction(account.RedeemScript, txInputs, txOutputs, TransferCrossChainAsset)
 	txn.Payload = txPayload
 
+	return txn, nil
+}
+
+func (wallet *WalletImpl) createRegSidechianTransaction(fromAddress string, fee *Fixed64, lockedUntil uint32, payload Payload, outputs ...*Transfer) (*Transaction, error) {
+	// Check if output is valid
+	if len(outputs) == 0 {
+		return nil, errors.New("[Wallet], Invalid transaction target")
+	}
+	// Sync chain block data before create transaction
+	wallet.SyncChainData()
+
+	// Check if from address is valid
+	spender, err := Uint168FromAddress(fromAddress)
+	if err != nil {
+		return nil, errors.New(fmt.Sprint("[Wallet], Invalid spender address: ", fromAddress, ", error: ", err))
+	}
+	// Create transaction outputs
+	var totalOutputAmount = Fixed64(0) // The total amount will be spend
+	var txOutputs []*Output            // The outputs in transaction
+	totalOutputAmount += *fee          // Add transaction fee
+
+	for _, output := range outputs {
+		receiver, err := Uint168FromAddress(output.Address)
+		if err != nil {
+			return nil, errors.New(fmt.Sprint("[Wallet], Invalid receiver address: ", output.Address, ", error: ", err))
+		}
+		txOutput := &Output{
+			AssetID:     SystemAssetId,
+			ProgramHash: *receiver,
+			Value:       *output.Amount,
+			OutputLock:  lockedUntil,
+		}
+		totalOutputAmount += *output.Amount
+		txOutputs = append(txOutputs, txOutput)
+	}
+	// Get spender's UTXOs
+	UTXOs, err := wallet.GetAddressUTXOs(spender)
+	if err != nil {
+		return nil, errors.New("[Wallet], Get spender's UTXOs failed")
+	}
+	availableUTXOs := wallet.removeLockedUTXOs(UTXOs) // Remove locked UTXOs
+	availableUTXOs = SortUTXOs(availableUTXOs)        // Sort available UTXOs by value ASC
+
+	// Create transaction inputs
+	var txInputs []*Input // The inputs in transaction
+	for _, utxo := range availableUTXOs {
+		input := &Input{
+			Previous: OutPoint{
+				TxID:  utxo.Op.TxID,
+				Index: utxo.Op.Index,
+			},
+			Sequence: utxo.LockTime,
+		}
+		txInputs = append(txInputs, input)
+		if *utxo.Amount < totalOutputAmount {
+			totalOutputAmount -= *utxo.Amount
+		} else if *utxo.Amount == totalOutputAmount {
+			totalOutputAmount = 0
+			break
+		} else if *utxo.Amount > totalOutputAmount {
+			change := &Output{
+				AssetID:     SystemAssetId,
+				Value:       *utxo.Amount - totalOutputAmount,
+				OutputLock:  uint32(0),
+				ProgramHash: *spender,
+			}
+			txOutputs = append(txOutputs, change)
+			totalOutputAmount = 0
+			break
+		}
+	}
+	if totalOutputAmount > 0 {
+		return nil, errors.New("[Wallet], Available token is not enough")
+	}
+
+	account, err := wallet.GetAddressInfo(spender)
+	if err != nil {
+		return nil, errors.New("[Wallet], Get spenders account info failed")
+	}
+
+	txn := wallet.newTransaction(account.RedeemScript, txInputs, txOutputs, RegisterSidechain)
+	txn.Payload = payload
 	return txn, nil
 }
 

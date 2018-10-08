@@ -384,6 +384,64 @@ func NewCommand() *cli.Command {
 				Name:  "withdraw",
 				Usage: "create withdraw transaction",
 			},
+
+			cli.StringFlag{
+				Name:  "genesishash",
+				Usage: "sidechain genesishash",
+			},
+			cli.IntFlag{
+				Name:  "coinindex",
+				Usage: "sidechain coinindex",
+			},
+			cli.StringFlag{
+				Name:  "sidechainname",
+				Usage: "sidechain name",
+			},
+			cli.IntFlag{
+				Name:  "sidechaintype",
+				Usage: "sidechian type",
+			},
+			cli.StringFlag{
+				Name:  "knownpeers",
+				Usage: "sidechian knownpeers",
+			},
+			cli.StringFlag{
+				Name:  "checkpoint",
+				Usage: "sidechian checkpoint",
+			},
+			cli.IntFlag{
+				Name:  "consensustype",
+				Usage: "sidechian consensustype",
+			},
+			cli.StringFlag{
+				Name:  "blocktype",
+				Usage: "sidechian block type",
+			},
+			cli.StringFlag{
+				Name:  "transactiontype",
+				Usage: "sidechian transaction type",
+			},
+			cli.IntFlag{
+				Name:  "ectype",
+				Usage: "sidechian ectype",
+			},
+			cli.StringFlag{
+				Name:  "addresstype",
+				Usage: "sidechian address type",
+			},
+			cli.Int64Flag{
+				Name:  "minfee",
+				Usage: "sidechian minfee",
+			},
+			cli.IntFlag{
+				Name:  "rate",
+				Usage: "sidechian rate",
+			},
+
+			cli.BoolFlag{
+				Name:  "regsidechain",
+				Usage: "create regsidechain transaction",
+			},
 			cli.StringFlag{
 				Name:  "genesis, g",
 				Usage: "calculate genesis address from genesis block hash",

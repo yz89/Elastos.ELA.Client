@@ -50,6 +50,7 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 		return errors.New("use --amount to specify transfer amount")
 	}
 
+
 	amount, err := StringToFixed64(amountStr)
 	if err != nil {
 		return errors.New("invalid transaction amount")
@@ -60,6 +61,7 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 	standard := c.String("to")
 	deposit := c.String("deposit")
 	withdraw := c.String("withdraw")
+	regsidechain := c.Bool("regsidechain")
 	if deposit != "" {
 		to = config.Params().DepositAddress
 		txn, err = wallet.CreateCrossChainTransaction(from, to, deposit, amount, fee)
@@ -69,6 +71,37 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 	} else if withdraw != "" {
 		to = walt.DESTROY_ADDRESS
 		txn, err = wallet.CreateCrossChainTransaction(from, to, withdraw, amount, fee)
+		if err != nil {
+			return errors.New("create transaction failed: " + err.Error())
+		}
+	} else if regsidechain {
+		to = from
+		genesisHashStr := c.String("genesishash")
+		genesisHash, err := Uint256FromHexString(genesisHashStr)
+		if err != nil {
+			return errors.New("create register sidechain transaction failed: " + err.Error())
+		}
+
+		knownPeersStr := c.String("knownpeers")
+		knownPeer := strings.Split(knownPeersStr, ",")
+
+		payload := &PayloadRegisterSidechain{
+			GenesisHash: *genesisHash,
+			CoinIndex:	uint32(c.Int("coinindex")),
+			Name: c.String("sidechainname"),
+			SideChainType: SideChainType(c.Int("sidechaintype")),
+			KnownPeers: knownPeer,
+			CheckPoint: CheckPoint{},
+			ConsensusType: ConsensusType(c.Int("consensustype")),
+			BlockType: c.String("blocktype"),
+			TransactionType: c.String("transactiontype"),
+			ECType: ECType(c.Int("ectype")),
+			AddressType: c.String("addresstype"),
+			MinFee: Fixed64(c.Int64("minfee")),
+			Rate: uint32(c.Int("rate")),
+		}
+
+		txn, err = wallet.CreateRegSidechainTransaction(from, to, amount, fee, payload)
 		if err != nil {
 			return errors.New("create transaction failed: " + err.Error())
 		}
