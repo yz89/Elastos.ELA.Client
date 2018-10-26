@@ -1,3 +1,5 @@
 {
-    "Host": "127.0.0.1:20336"
+	"LogToFile":false,
+	"Host": "127.0.0.1:20336",
+	"DepositAddress":"EEmfgnrDLQmFPBJiWvsyYGV2jzLQY58J6G"
 }

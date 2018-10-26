@@ -7,16 +7,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 
-	"github.com/elastos/Elastos.ELA.Client/rpc"
+	"github.com/elastos/Elastos.ELA.Client/config"
 	"github.com/elastos/Elastos.ELA.Client/log"
+	"github.com/elastos/Elastos.ELA.Client/rpc"
 	walt "github.com/elastos/Elastos.ELA.Client/wallet"
-
-	. "github.com/elastos/Elastos.ELA/core"
 	. "github.com/elastos/Elastos.ELA.Utility/common"
 	"github.com/elastos/Elastos.ELA.Utility/crypto"
+	. "github.com/elastos/Elastos.ELA/core"
 	"github.com/urfave/cli"
 )
 
@@ -45,11 +45,6 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 		return createMultiOutputTransaction(c, wallet, multiOutput, from, fee)
 	}
 
-	to := c.String("to")
-	if to == "" {
-		return errors.New("use --to to specify receiver address")
-	}
-
 	amountStr := c.String("amount")
 	if amountStr == "" {
 		return errors.New("use --amount to specify transfer amount")
@@ -60,22 +55,43 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 		return errors.New("invalid transaction amount")
 	}
 
-	lockStr := c.String("lock")
 	var txn *Transaction
-	if lockStr == "" {
-		txn, err = wallet.CreateTransaction(from, to, amount, fee)
+	var to string
+	standard := c.String("to")
+	deposit := c.String("deposit")
+	withdraw := c.String("withdraw")
+	if deposit != "" {
+		to = config.Params().DepositAddress
+		txn, err = wallet.CreateCrossChainTransaction(from, to, deposit, amount, fee)
 		if err != nil {
 			return errors.New("create transaction failed: " + err.Error())
+		}
+	} else if withdraw != "" {
+		to = walt.DESTROY_ADDRESS
+		txn, err = wallet.CreateCrossChainTransaction(from, to, withdraw, amount, fee)
+		if err != nil {
+			return errors.New("create transaction failed: " + err.Error())
+		}
+	} else if standard != "" {
+		to = standard
+		lockStr := c.String("lock")
+		if lockStr == "" {
+			txn, err = wallet.CreateTransaction(from, to, amount, fee)
+			if err != nil {
+				return errors.New("create transaction failed: " + err.Error())
+			}
+		} else {
+			lock, err := strconv.ParseUint(lockStr, 10, 32)
+			if err != nil {
+				return errors.New("invalid lock height")
+			}
+			txn, err = wallet.CreateLockedTransaction(from, to, amount, fee, uint32(lock))
+			if err != nil {
+				return errors.New("create transaction failed: " + err.Error())
+			}
 		}
 	} else {
-		lock, err := strconv.ParseUint(lockStr, 10, 32)
-		if err != nil {
-			return errors.New("invalid lock height")
-		}
-		txn, err = wallet.CreateLockedTransaction(from, to, amount, fee, uint32(lock))
-		if err != nil {
-			return errors.New("create transaction failed: " + err.Error())
-		}
+		return errors.New("use --to or --deposit or --withdraw to specify receiver address")
 	}
 
 	output(0, 0, txn)
