@@ -1,15 +1,18 @@
 package wallet
 
 import (
-	"os"
-	"fmt"
+	"bytes"
+	"crypto/sha256"
 	"errors"
+	"fmt"
+	"os"
 
-	"github.com/elastos/Elastos.ELA.Client/wallet"
 	"github.com/elastos/Elastos.ELA.Client/log"
+	"github.com/elastos/Elastos.ELA.Client/wallet"
 
-	"github.com/urfave/cli"
 	"github.com/elastos/Elastos.ELA.Utility/common"
+	"github.com/urfave/cli"
+	"golang.org/x/crypto/ripemd160"
 )
 
 const (
@@ -105,6 +108,42 @@ func listBalanceInfo(wallet wallet.Wallet) error {
 	}
 
 	return ShowAccounts(addresses, nil, wallet)
+}
+
+func calculateGenesisAddress(genesisBlockHash string) error {
+	genesisBlockBytes, err := common.HexStringToBytes(genesisBlockHash)
+	if err != nil {
+		return errors.New("genesis block hash to bytes failed")
+	}
+	reversedGenesisBlockBytes := common.BytesReverse(genesisBlockBytes)
+	reversedGenesisBlockStr := common.BytesToHexString(reversedGenesisBlockBytes)
+
+	fmt.Println("genesis program hash:", reversedGenesisBlockStr)
+
+	buf := new(bytes.Buffer)
+	buf.WriteByte(byte(len(reversedGenesisBlockBytes)))
+	buf.Write(reversedGenesisBlockBytes)
+	buf.WriteByte(byte(common.CROSSCHAIN))
+
+	sum168 := func(prefix byte, code []byte) []byte {
+		hash := sha256.Sum256(code)
+		md160 := ripemd160.New()
+		md160.Write(hash[:])
+		return md160.Sum([]byte{prefix})
+	}
+
+	genesisProgramHash, err := common.Uint168FromBytes(sum168(common.PrefixCrossChain, buf.Bytes()))
+	if err != nil {
+		return errors.New("genesis block bytes to program hash failed")
+	}
+
+	genesisAddress, err := genesisProgramHash.ToAddress()
+	if err != nil {
+		return errors.New("genesis block hash to genesis address failed")
+	}
+	fmt.Println("genesis address: ", genesisAddress)
+
+	return nil
 }
 
 func walletAction(context *cli.Context) {
@@ -226,6 +265,14 @@ func walletAction(context *cli.Context) {
 		fmt.Println("wallet data store was reset successfully")
 		return
 	}
+
+	//calculate genesis address
+	if genesisBlockHash := context.String("genesis"); genesisBlockHash != "" {
+		if err := calculateGenesisAddress(genesisBlockHash); err != nil {
+			fmt.Println("error:", err)
+			os.Exit(704)
+		}
+	}
 }
 
 func NewCommand() *cli.Command {
@@ -324,6 +371,22 @@ func NewCommand() *cli.Command {
 				Name: "file, f",
 				Usage: "the file path to specify a CSV file path with [address,amount] format as multi output content,\n" +
 					"\tor the transaction file path with the hex string content to be sign or send",
+			},
+			cli.StringFlag{
+				Name:  "key",
+				Usage: "the public key of target account",
+			},
+			cli.StringFlag{
+				Name:  "deposit",
+				Usage: "create deposit transaction",
+			},
+			cli.StringFlag{
+				Name:  "withdraw",
+				Usage: "create withdraw transaction",
+			},
+			cli.StringFlag{
+				Name:  "genesis, g",
+				Usage: "calculate genesis address from genesis block hash",
 			},
 		},
 		Action: walletAction,
