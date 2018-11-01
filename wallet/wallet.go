@@ -186,6 +186,7 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 			ProgramHash: *receiver,
 			Value:       *output.Amount,
 			OutputLock:  lockedUntil,
+			OutputPayload: []byte("123456789"),
 		}
 		totalOutputAmount += *output.Amount
 		txOutputs = append(txOutputs, txOutput)
@@ -220,6 +221,7 @@ func (wallet *WalletImpl) createTransaction(fromAddress string, fee *Fixed64, lo
 				Value:       *utxo.Amount - totalOutputAmount,
 				OutputLock:  uint32(0),
 				ProgramHash: *spender,
+				OutputPayload: []byte("987654321"),
 			}
 			txOutputs = append(txOutputs, change)
 			totalOutputAmount = 0
@@ -473,6 +475,7 @@ func (wallet *WalletImpl) newTransaction(redeemScript []byte, inputs []*Input, o
 	var program = &Program{redeemScript, nil}
 	// Create transaction
 	return &Transaction{
+		Version: TxVersionC0,
 		TxType:     txType,
 		Payload:    txPayload,
 		Attributes: attributes,
