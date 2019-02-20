@@ -14,9 +14,10 @@ import (
 	"github.com/elastos/Elastos.ELA.Client/log"
 	"github.com/elastos/Elastos.ELA.Client/rpc"
 	walt "github.com/elastos/Elastos.ELA.Client/wallet"
-	. "github.com/elastos/Elastos.ELA.Utility/common"
-	"github.com/elastos/Elastos.ELA.Utility/crypto"
-	. "github.com/elastos/Elastos.ELA/core"
+
+	"github.com/elastos/Elastos.ELA/common"
+	"github.com/elastos/Elastos.ELA/crypto"
+	"github.com/elastos/Elastos.ELA/core/types"
 	"github.com/urfave/cli"
 )
 
@@ -27,7 +28,7 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 		return errors.New("use --fee to specify transfer fee")
 	}
 
-	fee, err := StringToFixed64(feeStr)
+	fee, err := common.StringToFixed64(feeStr)
 	if err != nil {
 		return errors.New("invalid transaction fee")
 	}
@@ -50,12 +51,12 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 		return errors.New("use --amount to specify transfer amount")
 	}
 
-	amount, err := StringToFixed64(amountStr)
+	amount, err := common.StringToFixed64(amountStr)
 	if err != nil {
 		return errors.New("invalid transaction amount")
 	}
 
-	var txn *Transaction
+	var txn *types.Transaction
 	var to string
 	standard := c.String("to")
 	deposit := c.String("deposit")
@@ -99,7 +100,7 @@ func createTransaction(c *cli.Context, wallet walt.Wallet) error {
 	return nil
 }
 
-func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from string, fee *Fixed64) error {
+func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from string, fee *common.Fixed64) error {
 	if _, err := os.Stat(path); err != nil {
 		return errors.New("invalid multi output file path")
 	}
@@ -116,7 +117,7 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 			return errors.New(fmt.Sprint("invalid multi output line:", columns))
 		}
 		amountStr := strings.TrimSpace(columns[1])
-		amount, err := StringToFixed64(amountStr)
+		amount, err := common.StringToFixed64(amountStr)
 		if err != nil {
 			return errors.New("invalid multi output transaction amount: " + amountStr)
 		}
@@ -126,7 +127,7 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 	}
 
 	lockStr := c.String("lock")
-	var txn *Transaction
+	var txn *types.Transaction
 	if lockStr == "" {
 		txn, err = wallet.CreateMultiOutputTransaction(from, fee, multiOutput...)
 		if err != nil {
@@ -149,18 +150,18 @@ func createMultiOutputTransaction(c *cli.Context, wallet walt.Wallet, path, from
 }
 
 func signTransaction(name string, password []byte, context *cli.Context, wallet walt.Wallet) error {
-	defer ClearBytes(password)
+	defer common.ClearBytes(password)
 
 	content, err := getTransactionContent(context)
 	if err != nil {
 		return err
 	}
-	rawData, err := HexStringToBytes(content)
+	rawData, err := common.HexStringToBytes(content)
 	if err != nil {
 		return errors.New("decode transaction content failed")
 	}
 
-	var txn Transaction
+	var txn types.Transaction
 	err = txn.Deserialize(bytes.NewReader(rawData))
 	if err != nil {
 		return errors.New("deserialize transaction failed")
@@ -239,11 +240,11 @@ func getTransactionContent(context *cli.Context) (string, error) {
 	return content, nil
 }
 
-func output(haveSign, needSign int, txn *Transaction) error {
+func output(haveSign, needSign int, txn *types.Transaction) error {
 	// Serialise transaction content
 	buf := new(bytes.Buffer)
 	txn.Serialize(buf)
-	content := BytesToHexString(buf.Bytes())
+	content := common.BytesToHexString(buf.Bytes())
 
 	// Print transaction hex string content to console
 	fmt.Println(content)

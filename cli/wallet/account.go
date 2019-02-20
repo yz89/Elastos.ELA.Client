@@ -9,8 +9,8 @@ import (
 
 	. "github.com/elastos/Elastos.ELA.Client/wallet"
 
-	. "github.com/elastos/Elastos.ELA.Utility/common"
-	"github.com/elastos/Elastos.ELA.Utility/crypto"
+	"github.com/elastos/Elastos.ELA/common"
+	"github.com/elastos/Elastos.ELA/crypto"
 	"github.com/urfave/cli"
 )
 
@@ -30,7 +30,7 @@ func addAccount(context *cli.Context, wallet Wallet, content string) error {
 	}
 
 	var err error
-	var programHash *Uint168
+	var programHash *common.Uint168
 	if !strings.Contains(content, ",") { // single public key
 		publicKey, err := getPublicKey(content)
 		if err != nil {
@@ -60,7 +60,7 @@ func addAccount(context *cli.Context, wallet Wallet, content string) error {
 			return errors.New("M must be greater than half number of public keys, less than number of public keys")
 		}
 
-		programHash, err = wallet.AddMultiSignAccount(uint(M), publicKeys...)
+		programHash, err = wallet.AddMultiSignAccount(M, publicKeys...)
 		if err != nil {
 			return err
 		}
@@ -98,7 +98,7 @@ func getPublicKey(content string) (*crypto.PublicKey, error) {
 	}
 
 	// Get public key
-	keyBytes, err := HexStringToBytes(strings.TrimSpace(content))
+	keyBytes, err := common.HexStringToBytes(strings.TrimSpace(content))
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func getPublicKeys(content string) ([]*crypto.PublicKey, error) {
 	// Decode public keys from public key strings
 	var publicKeys []*crypto.PublicKey
 	for _, v := range publicKeyStrings {
-		keyBytes, err := HexStringToBytes(strings.TrimSpace(v))
+		keyBytes, err := common.HexStringToBytes(strings.TrimSpace(v))
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +161,7 @@ func getPublicKeys(content string) ([]*crypto.PublicKey, error) {
 }
 
 func deleteAccount(wallet Wallet, address string) error {
-	programHash, err := Uint168FromAddress(address)
+	programHash, err := common.Uint168FromAddress(address)
 	if err != nil {
 		return err
 	}

@@ -7,9 +7,10 @@ import (
 	"errors"
 	"sync"
 
-	. "github.com/elastos/Elastos.ELA.Utility/common"
-	"github.com/elastos/Elastos.ELA.Utility/crypto"
-	. "github.com/elastos/Elastos.ELA/core"
+	"github.com/elastos/Elastos.ELA/common"
+	"github.com/elastos/Elastos.ELA/core/contract"
+	"github.com/elastos/Elastos.ELA/crypto"
+	"github.com/elastos/Elastos.ELA/core/types"
 	"crypto/elliptic"
 )
 
@@ -23,10 +24,10 @@ type Keystore interface {
 	GetPrivateKey() []byte
 	GetPublicKey() *crypto.PublicKey
 	GetRedeemScript() []byte
-	GetProgramHash() *Uint168
+	GetProgramHash() *common.Uint168
 	Address() string
 
-	Sign(txn *Transaction) ([]byte, error)
+	Sign(txn *types.Transaction) ([]byte, error)
 }
 
 type KeystoreImpl struct {
@@ -37,7 +38,7 @@ type KeystoreImpl struct {
 	privateKey   []byte
 	publicKey    *crypto.PublicKey
 	redeemScript []byte
-	programHash  *Uint168
+	programHash  *common.Uint168
 	address      string
 }
 
@@ -58,9 +59,9 @@ func ImportKeystore(name string, password []byte, privateKey []byte) error {
 	masterKey := GenerateKey(32)
 
 	passwordKey := crypto.ToAesKey(password)
-	defer ClearBytes(passwordKey)
+	defer common.ClearBytes(passwordKey)
 	passwordHash := sha256.Sum256(passwordKey)
-	defer ClearBytes(passwordHash[:])
+	defer common.ClearBytes(passwordHash[:])
 	// Set password hash
 	keystoreFile.SetPasswordHash(passwordHash[:])
 
@@ -76,7 +77,7 @@ func ImportKeystore(name string, password []byte, privateKey []byte) error {
 	publicKey.X, publicKey.Y = elliptic.P256().ScalarBaseMult(privateKey)
 
 	privateKeyEncrypted, err := keystore.encryptPrivateKey(masterKey, passwordKey, privateKey, publicKey)
-	defer ClearBytes(privateKeyEncrypted)
+	defer common.ClearBytes(privateKeyEncrypted)
 	// Set private key encrypted
 	keystoreFile.SetPrivateKeyEncrypted(privateKeyEncrypted)
 
@@ -111,9 +112,9 @@ func CreateKeystore(name string, password []byte) (Keystore, error) {
 	masterKey := GenerateKey(32)
 
 	passwordKey := crypto.ToAesKey(password)
-	defer ClearBytes(passwordKey)
+	defer common.ClearBytes(passwordKey)
 	passwordHash := sha256.Sum256(passwordKey)
-	defer ClearBytes(passwordHash[:])
+	defer common.ClearBytes(passwordHash[:])
 	// Set password hash
 	keystoreFile.SetPasswordHash(passwordHash[:])
 
@@ -131,7 +132,7 @@ func CreateKeystore(name string, password []byte) (Keystore, error) {
 	}
 
 	privateKeyEncrypted, err := keystore.encryptPrivateKey(masterKey, passwordKey, privateKey, publicKey)
-	defer ClearBytes(privateKeyEncrypted)
+	defer common.ClearBytes(privateKeyEncrypted)
 	// Set private key encrypted
 	keystoreFile.SetPrivateKeyEncrypted(privateKeyEncrypted)
 
@@ -199,18 +200,9 @@ func (store *KeystoreImpl) init(privateKey []byte, publicKey *crypto.PublicKey) 
 	// Set public key
 	store.publicKey = publicKey
 
-	var err error
-	// Set redeem script
-	store.redeemScript, err = crypto.CreateStandardRedeemScript(publicKey)
-	if err != nil {
-		return err
-	}
-
-	// Set program hash
-	store.programHash, err = crypto.ToProgramHash(store.redeemScript)
-	if err != nil {
-		return err
-	}
+	contract, err := contract.CreateStandardContract(publicKey)
+	store.redeemScript = contract.Code
+	store.programHash = contract.ToProgramHash()
 
 	// Set address
 	store.address, err = store.programHash.ToAddress()
@@ -229,15 +221,15 @@ func (store *KeystoreImpl) catchSystemSignals() {
 
 func (store *KeystoreImpl) verifyPassword(password []byte) error {
 	passwordKey := crypto.ToAesKey(password)
-	defer ClearBytes(passwordKey)
+	defer common.ClearBytes(passwordKey)
 	passwordHash := sha256.Sum256(passwordKey)
-	defer ClearBytes(passwordHash[:])
+	defer common.ClearBytes(passwordHash[:])
 
 	origin, err := store.GetPasswordHash()
 	if err != nil {
 		return err
 	}
-	if IsEqualBytes(origin, passwordHash[:]) {
+	if bytes.Equal(origin, passwordHash[:]) {
 		return nil
 	}
 	return errors.New("password wrong")
@@ -246,32 +238,32 @@ func (store *KeystoreImpl) verifyPassword(password []byte) error {
 func (store *KeystoreImpl) ChangePassword(oldPassword, newPassword []byte) error {
 	// Get old passwordKey
 	oldPasswordKey := crypto.ToAesKey(oldPassword)
-	defer ClearBytes(oldPasswordKey)
+	defer common.ClearBytes(oldPasswordKey)
 
 	masterKeyEncrypted, err := store.GetMasterKeyEncrypted()
 	if err != nil {
 		return err
 	}
-	defer ClearBytes(masterKeyEncrypted)
+	defer common.ClearBytes(masterKeyEncrypted)
 
 	masterKey, err := store.decryptMasterKey(oldPasswordKey)
 	if err != nil {
 		return err
 	}
-	defer ClearBytes(masterKey)
+	defer common.ClearBytes(masterKey)
 
 	// Decrypt private key
 	privateKey, publicKey, err := store.decryptPrivateKey(oldPasswordKey)
 	if err != nil {
 		return err
 	}
-	defer ClearBytes(privateKey)
+	defer common.ClearBytes(privateKey)
 
 	// Encrypt private key with new password
 	newPasswordKey := crypto.ToAesKey(newPassword)
-	defer ClearBytes(newPasswordKey)
+	defer common.ClearBytes(newPasswordKey)
 	newPasswordHash := sha256.Sum256(newPasswordKey)
-	defer ClearBytes(newPasswordHash[:])
+	defer common.ClearBytes(newPasswordHash[:])
 
 	masterKeyEncrypted, err = store.encryptMasterKey(newPasswordKey, masterKey)
 	if err != nil {
@@ -282,7 +274,7 @@ func (store *KeystoreImpl) ChangePassword(oldPassword, newPassword []byte) error
 	if err != nil {
 		return err
 	}
-	defer ClearBytes(privateKeyEncrypted)
+	defer common.ClearBytes(privateKeyEncrypted)
 
 	store.SetPasswordHash(newPasswordHash[:])
 	store.SetMasterKeyEncrypted(masterKeyEncrypted)
@@ -308,7 +300,7 @@ func (store *KeystoreImpl) GetRedeemScript() []byte {
 	return store.redeemScript
 }
 
-func (store *KeystoreImpl) GetProgramHash() *Uint168 {
+func (store *KeystoreImpl) GetProgramHash() *common.Uint168 {
 	return store.programHash
 }
 
@@ -316,7 +308,7 @@ func (store *KeystoreImpl) Address() string {
 	return store.address
 }
 
-func (store *KeystoreImpl) Sign(txn *Transaction) ([]byte, error) {
+func (store *KeystoreImpl) Sign(txn *types.Transaction) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	txn.SerializeUnsigned(buf)
 	signedData, err := crypto.Sign(store.privateKey, buf.Bytes())
@@ -362,7 +354,7 @@ func (store *KeystoreImpl) decryptMasterKey(passwordKey []byte) (masterKey []byt
 
 func (store *KeystoreImpl) encryptPrivateKey(masterKey, passwordKey, privateKey []byte, publicKey *crypto.PublicKey) ([]byte, error) {
 	decryptedPrivateKey := make([]byte, 96)
-	defer ClearBytes(decryptedPrivateKey)
+	defer common.ClearBytes(decryptedPrivateKey)
 
 	publicKeyBytes, err := publicKey.EncodePoint(false)
 	if err != nil {
@@ -405,13 +397,13 @@ func (store *KeystoreImpl) decryptPrivateKey(passwordKey []byte) ([]byte, *crypt
 	if err != nil {
 		return nil, nil, err
 	}
-	defer ClearBytes(masterKeyEncrypted)
+	defer common.ClearBytes(masterKeyEncrypted)
 
 	masterKey, err := store.decryptMasterKey(passwordKey)
 	if err != nil {
 		return nil, nil, err
 	}
-	defer ClearBytes(masterKey)
+	defer common.ClearBytes(masterKey)
 
 	keyPair, err := crypto.AesDecrypt(privateKeyEncrypted, masterKey, iv)
 	if err != nil {

@@ -9,8 +9,8 @@ import (
 
 	"github.com/elastos/Elastos.ELA.Client/log"
 
-	. "github.com/elastos/Elastos.ELA.Utility/common"
-	. "github.com/elastos/Elastos.ELA/core"
+	"github.com/elastos/Elastos.ELA/common"
+	"github.com/elastos/Elastos.ELA/core/types"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -42,8 +42,8 @@ const (
 )
 
 type UTXO struct {
-	Op       *OutPoint
-	Amount   *Fixed64
+	Op       *types.OutPoint
+	Amount   *common.Fixed64
 	LockTime uint32
 }
 
@@ -53,14 +53,14 @@ type DataStore interface {
 
 	CurrentHeight(height uint32) uint32
 
-	AddAddress(programHash *Uint168, redeemScript []byte, addrType int) error
-	DeleteAddress(programHash *Uint168) error
-	GetAddressInfo(programHash *Uint168) (*Address, error)
+	AddAddress(programHash *common.Uint168, redeemScript []byte, addrType int) error
+	DeleteAddress(programHash *common.Uint168) error
+	GetAddressInfo(programHash *common.Uint168) (*Address, error)
 	GetAddresses() ([]*Address, error)
 
-	AddAddressUTXO(programHash *Uint168, utxo *UTXO) error
-	DeleteUTXO(input *OutPoint) error
-	GetAddressUTXOs(programHash *Uint168) ([]*UTXO, error)
+	AddAddressUTXO(programHash *common.Uint168, utxo *UTXO) error
+	DeleteUTXO(input *types.OutPoint) error
+	GetAddressUTXOs(programHash *common.Uint168) ([]*UTXO, error)
 
 	ResetDataStore() error
 }
@@ -159,7 +159,7 @@ func (store *DataStoreImpl) CurrentHeight(height uint32) uint32 {
 	return storedHeight
 }
 
-func (store *DataStoreImpl) AddAddress(programHash *Uint168, redeemScript []byte, addrType int) error {
+func (store *DataStoreImpl) AddAddress(programHash *common.Uint168, redeemScript []byte, addrType int) error {
 	store.Lock()
 	defer store.Unlock()
 
@@ -171,7 +171,7 @@ func (store *DataStoreImpl) AddAddress(programHash *Uint168, redeemScript []byte
 	return nil
 }
 
-func (store *DataStoreImpl) DeleteAddress(programHash *Uint168) error {
+func (store *DataStoreImpl) DeleteAddress(programHash *common.Uint168) error {
 	store.Lock()
 	defer store.Unlock()
 
@@ -197,7 +197,7 @@ func (store *DataStoreImpl) DeleteAddress(programHash *Uint168) error {
 	return nil
 }
 
-func (store *DataStoreImpl) GetAddressInfo(programHash *Uint168) (*Address, error) {
+func (store *DataStoreImpl) GetAddressInfo(programHash *common.Uint168) (*Address, error) {
 	store.Lock()
 	defer store.Unlock()
 
@@ -237,7 +237,7 @@ func (store *DataStoreImpl) GetAddresses() ([]*Address, error) {
 			log.Error("Get address scan row:", err)
 			return nil, err
 		}
-		programHash, err := Uint168FromBytes(programHashBytes)
+		programHash, err := common.Uint168FromBytes(programHashBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -250,7 +250,7 @@ func (store *DataStoreImpl) GetAddresses() ([]*Address, error) {
 	return addresses, nil
 }
 
-func (store *DataStoreImpl) AddAddressUTXO(programHash *Uint168, utxo *UTXO) error {
+func (store *DataStoreImpl) AddAddressUTXO(programHash *common.Uint168, utxo *UTXO) error {
 	store.Lock()
 	defer store.Unlock()
 
@@ -278,7 +278,7 @@ func (store *DataStoreImpl) AddAddressUTXO(programHash *Uint168, utxo *UTXO) err
 	return nil
 }
 
-func (store *DataStoreImpl) DeleteUTXO(op *OutPoint) error {
+func (store *DataStoreImpl) DeleteUTXO(op *types.OutPoint) error {
 	store.Lock()
 	defer store.Unlock()
 
@@ -294,7 +294,7 @@ func (store *DataStoreImpl) DeleteUTXO(op *OutPoint) error {
 	return nil
 }
 
-func (store *DataStoreImpl) GetAddressUTXOs(programHash *Uint168) ([]*UTXO, error) {
+func (store *DataStoreImpl) GetAddressUTXOs(programHash *common.Uint168) ([]*UTXO, error) {
 	store.Lock()
 	defer store.Unlock()
 
@@ -315,11 +315,11 @@ func (store *DataStoreImpl) GetAddressUTXOs(programHash *Uint168) ([]*UTXO, erro
 			return nil, err
 		}
 
-		var op OutPoint
+		var op types.OutPoint
 		reader := bytes.NewReader(opBytes)
 		op.Deserialize(reader)
 
-		var amount Fixed64
+		var amount common.Fixed64
 		reader = bytes.NewReader(amountBytes)
 		amount.Deserialize(reader)
 
